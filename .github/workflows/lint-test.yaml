@@ -23,7 +23,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          # Pin to 3.13 — yamale (used by ct) is incompatible with 3.14+ (ast.Num removed)
+          python-version: "3.13"
 
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2
