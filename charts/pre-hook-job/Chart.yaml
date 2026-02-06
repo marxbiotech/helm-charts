@@ -2,7 +2,7 @@ apiVersion: v2
 name: pre-hook-job
 description: A generic Helm chart for running pre-install/pre-upgrade hook Jobs (e.g. DB migrations, seeding)
 type: application
-version: 0.1.1
+version: 0.1.2
 appVersion: "1.0.0"
 maintainers:
   - name: xin
