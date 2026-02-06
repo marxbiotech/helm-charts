@@ -1,0 +1,11 @@
+# Minimal usable configuration for CI testing.
+job:
+  enabled: true
+  hash: "ci-default"
+
+image:
+  repository: busybox
+  tag: "1.37"
+
+command: ["echo"]
+args: ["pre-hook-job default CI test"]

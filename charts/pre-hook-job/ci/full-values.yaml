@@ -1,0 +1,80 @@
+# Full configuration with all options enabled for CI testing.
+job:
+  enabled: true
+  hash: "ci-full"
+  hookWeight: "-2"
+  hookDeletePolicy: "hook-failed"
+  backoffLimit: 5
+  ttlSecondsAfterFinished: 3600
+  annotations:
+    custom-annotation: "test-value"
+  labels:
+    custom-label: "test-value"
+
+image:
+  repository: busybox
+  tag: "1.37"
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: my-registry-secret
+
+command: ["sh"]
+args: ["-c", "echo full CI test"]
+
+env:
+  - name: TEST_ENV
+    value: "hello"
+
+envFrom:
+  - configMapRef:
+      name: test-config
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  fsGroup: 1000
+
+securityContext:
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+
+nodeSelector:
+  kubernetes.io/os: linux
+
+tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "jobs"
+    effect: "NoSchedule"
+
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+            - key: node-type
+              operator: In
+              values:
+                - worker
+
+restartPolicy: Never
+serviceAccountName: "my-service-account"
+
+podAnnotations:
+  prometheus.io/scrape: "false"
+
+podLabels:
+  team: "backend"
+
+nameOverride: "migration"
+fullnameOverride: ""

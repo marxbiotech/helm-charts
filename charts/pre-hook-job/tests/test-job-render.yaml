@@ -1,0 +1,21 @@
+{{- if .Values.job.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "pre-hook-job.fullname" . }}-test-render"
+  labels:
+    {{- include "pre-hook-job.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: test
+      image: busybox:1.37
+      command: ['sh', '-c', 'echo "pre-hook-job rendered successfully"']
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+  restartPolicy: Never
+{{- end }}

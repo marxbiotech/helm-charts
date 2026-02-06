@@ -1,0 +1,79 @@
+# Default values for pre-hook-job.
+# Designed as a subchart — parent chart enables and configures via alias.
+
+# -- Job configuration
+job:
+  # -- Enable the hook Job (default false; parent chart should set true)
+  enabled: false
+  # -- Unique hash for this Job's content — ensures a new Job is created on each change (REQUIRED when enabled)
+  hash: ""
+  # -- Helm hook weight — controls execution order among multiple hooks (lower runs first)
+  hookWeight: "-1"
+  # -- Helm hook delete policy — "hook-failed" deletes on failure so Helm can retry; keeps succeeded for log inspection
+  hookDeletePolicy: "hook-failed"
+  # -- Job backoff limit — number of retries before marking as failed
+  backoffLimit: 3
+  # -- TTL seconds after Job finishes — auto-cleanup succeeded Jobs (set to null to omit)
+  ttlSecondsAfterFinished: 86400
+  # -- Additional annotations to add to the Job
+  annotations: {}
+  # -- Additional labels to add to the Job
+  labels: {}
+
+# -- Container image configuration
+image:
+  # -- Image repository (REQUIRED when job.enabled)
+  repository: ""
+  # -- Image tag (REQUIRED when job.enabled) — no default to prevent floating tags
+  tag: ""
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+
+# -- Image pull secrets for private registries
+imagePullSecrets: []
+
+# -- Command to execute in the container (overrides ENTRYPOINT)
+command: []
+# -- Arguments to the command (overrides CMD)
+args: []
+
+# -- Environment variables for the container
+env: []
+# -- Bulk environment variable sources (Secret/ConfigMap references)
+envFrom: []
+
+# -- Container resource requests and limits
+resources: {}
+
+# -- Pod-level security context
+podSecurityContext: {}
+# -- Container-level security context
+securityContext: {}
+
+# -- Volume mounts for the container
+volumeMounts: []
+# -- Volumes to attach to the pod
+volumes: []
+
+# -- Node selector constraints
+nodeSelector: {}
+# -- Tolerations for node taints
+tolerations: []
+# -- Affinity rules for pod scheduling
+affinity: {}
+
+# -- Pod restart policy (should be Never or OnFailure for Jobs)
+restartPolicy: Never
+
+# -- Service account name for the pod (typically set to parent chart's SA)
+serviceAccountName: ""
+
+# -- Additional annotations to add to the pod
+podAnnotations: {}
+# -- Additional labels to add to the pod
+podLabels: {}
+
+# -- Override the chart name used in resource names
+nameOverride: ""
+# -- Override the full resource name
+fullnameOverride: ""
