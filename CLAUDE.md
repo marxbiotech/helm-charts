@@ -29,7 +29,7 @@ helm test my-release                                             # 執行 chart 
 
 ## 新增 Chart 慣例
 
-1. 建立 `charts/<chart-name>/`，包含 `Chart.yaml`、`values.yaml`、`templates/`
+1. 建立 `charts/<chart-name>/`，包含 `Chart.yaml`、`values.yaml`、`templates/`；Helm test 放在 `templates/tests/`（非頂層 `tests/`），以確保 `helm template --show-only` 可正確找到
 2. 以 `charts/sample-app/` 為 Deployment-type 參考範本；以 `charts/pre-hook-job/` 為 Job-type（hook）參考範本
 3. `Chart.yaml` 使用 `apiVersion: v2`，必須含 `maintainers`
 4. `_helpers.tpl` 命名慣例：`<chart-name>.name`、`<chart-name>.fullname`、`<chart-name>.labels`、`<chart-name>.selectorLabels`；若 chart 需要 ServiceAccount 則另加 `<chart-name>.serviceAccountName`
