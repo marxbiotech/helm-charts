@@ -1,0 +1,12 @@
+apiVersion: v2
+name: pre-hook-job
+description: A generic Helm chart for running pre-install/pre-upgrade hook Jobs (e.g. DB migrations, seeding)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+maintainers:
+  - name: xin
+    email: aehrt55@aehrt55.net
+home: https://github.com/marxbiotech/helm-charts
+sources:
+  - https://github.com/marxbiotech/helm-charts

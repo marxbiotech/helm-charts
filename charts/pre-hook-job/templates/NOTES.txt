@@ -1,0 +1,18 @@
+{{- if .Values.job.enabled }}
+pre-hook-job "{{ include "pre-hook-job.jobName" . }}" is configured as a Helm pre-install/pre-upgrade hook.
+
+  Hook weight:         {{ .Values.job.hookWeight }}
+  Hook delete policy:  {{ .Values.job.hookDeletePolicy }}
+  Image:               {{ .Values.image.repository }}:{{ .Values.image.tag }}
+  Backoff limit:       {{ .Values.job.backoffLimit }}
+
+The Job will run automatically before the main application is installed or upgraded.
+
+To check Job status after a release:
+  kubectl get jobs -l "app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=pre-hook" -n {{ .Release.Namespace }}
+
+To view Job logs (available for succeeded Jobs; failed Jobs are deleted by hook-delete-policy):
+  kubectl logs job/{{ include "pre-hook-job.jobName" . }} -n {{ .Release.Namespace }}
+{{- else }}
+pre-hook-job is disabled (job.enabled=false). No resources were created.
+{{- end }}

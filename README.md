@@ -7,6 +7,7 @@ Production-ready Helm charts published as OCI artifacts to [GitHub Container Reg
 | Chart | Description |
 |-------|-------------|
 | [sample-app](./charts/sample-app) | A sample Helm chart for Kubernetes |
+| [pre-hook-job](./charts/pre-hook-job) | A generic chart for pre-install/pre-upgrade hook Jobs (DB migrations, seeding) |
 
 ## Install a Chart
 
