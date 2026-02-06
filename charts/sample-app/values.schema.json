@@ -92,6 +92,10 @@
     "affinity": {
       "description": "Pod affinity and anti-affinity rules",
       "type": "object"
+    },
+    "global": {
+      "description": "Global values passed from parent chart",
+      "type": "object"
     }
   }
 }
