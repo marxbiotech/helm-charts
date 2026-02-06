@@ -1,0 +1,14 @@
+# Helm packages
+*.tgz
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Plan files
+jolly-wandering-teacup.md

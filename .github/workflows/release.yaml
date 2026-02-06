@@ -1,0 +1,66 @@
+name: Release Charts
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "charts/**"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2
+
+      - name: Login to GHCR
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GHCR_TOKEN" | helm registry login ghcr.io -u "$GHCR_USER" --password-stdin
+
+      - name: Detect changed charts
+        id: changed
+        run: |
+          if ! git rev-parse HEAD~1 >/dev/null 2>&1; then
+            changed=$(find charts -mindepth 1 -maxdepth 1 -type d | sort)
+          else
+            changed=$(ct list-changed --config ct.yaml --target-branch HEAD~1)
+          fi
+          if [[ -n "$changed" ]]; then
+            echo "charts<<EOF" >> "$GITHUB_OUTPUT"
+            echo "$changed" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Package and push charts
+        if: steps.changed.outputs.charts
+        env:
+          CHANGED_CHARTS: ${{ steps.changed.outputs.charts }}
+        run: |
+          for chart in $CHANGED_CHARTS; do
+            chart_name=$(basename "$chart")
+            helm dependency build "$chart" 2>/dev/null || true
+            helm package "$chart"
+            pkg=$(ls ${chart_name}-*.tgz)
+            helm push "$pkg" oci://ghcr.io/marxbiotech/helm-charts
+            rm -f "$pkg"
+          done
