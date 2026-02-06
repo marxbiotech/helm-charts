@@ -127,6 +127,10 @@
     },
     "fullnameOverride": {
       "type": "string"
+    },
+    "global": {
+      "type": "object",
+      "description": "Global values passed from parent chart"
     }
   }
 }
