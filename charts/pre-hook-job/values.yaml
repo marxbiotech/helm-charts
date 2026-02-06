@@ -26,8 +26,10 @@ job:
 image:
   # -- Image repository (REQUIRED when job.enabled)
   repository: ""
-  # -- Image tag (REQUIRED when job.enabled) — no default to prevent floating tags
+  # -- Image tag (REQUIRED when job.enabled unless digest is set) — no default to prevent floating tags
   tag: ""
+  # -- Image digest — takes precedence over tag when set (e.g. sha256:abc123...)
+  digest: ""
   # -- Image pull policy
   pullPolicy: IfNotPresent
 
