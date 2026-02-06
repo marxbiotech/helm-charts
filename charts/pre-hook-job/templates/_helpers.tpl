@@ -59,7 +59,7 @@ Appending a content hash ensures a new Job is created whenever the migration/tas
 while identical hashes produce the same name (idempotent).
 */}}
 {{- define "pre-hook-job.jobName" -}}
-{{- $hash := required "job.hash is required — provide a unique hash representing the Job content" .Values.job.hash }}
+{{- $hash := required "job.hash is required — provide a unique hash representing the Job content" .Values.job.hash | lower | replace "_" "-" }}
 {{- $name := printf "%s-%s" (include "pre-hook-job.fullname" .) $hash }}
 {{- if gt (len $name) 63 }}
 {{- fail (printf "job name '%s' exceeds 63 characters (%d) — use fullnameOverride or a shorter hash to reduce length" $name (len $name)) }}

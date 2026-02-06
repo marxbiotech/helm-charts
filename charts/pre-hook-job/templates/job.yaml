@@ -22,6 +22,9 @@ spec:
   ttlSecondsAfterFinished: {{ .Values.job.ttlSecondsAfterFinished }}
   {{- end }}
   backoffLimit: {{ .Values.job.backoffLimit }}
+  {{- if not (kindIs "invalid" .Values.job.activeDeadlineSeconds) }}
+  activeDeadlineSeconds: {{ .Values.job.activeDeadlineSeconds }}
+  {{- end }}
   template:
     metadata:
       labels:
