@@ -67,6 +67,16 @@ affinity:
               values:
                 - worker
 
+volumeMounts:
+  - name: config
+    mountPath: /etc/config
+    readOnly: true
+
+volumes:
+  - name: config
+    configMap:
+      name: test-config
+
 restartPolicy: Never
 serviceAccountName: "my-service-account"
 
@@ -77,4 +87,4 @@ podLabels:
   team: "backend"
 
 nameOverride: "migration"
-fullnameOverride: ""
+fullnameOverride: "my-migration-job"

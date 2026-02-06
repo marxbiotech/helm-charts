@@ -1,0 +1,12 @@
+# CI test: ttlSecondsAfterFinished explicitly set to null (should omit the field).
+job:
+  enabled: true
+  hash: "ci-null-ttl"
+  ttlSecondsAfterFinished: null
+
+image:
+  repository: busybox
+  tag: "1.37"
+
+command: ["echo"]
+args: ["pre-hook-job null-ttl CI test"]

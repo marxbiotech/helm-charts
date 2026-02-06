@@ -60,12 +60,10 @@ while identical hashes produce the same name (idempotent).
 */}}
 {{- define "pre-hook-job.jobName" -}}
 {{- $hash := required "job.hash is required — provide a unique hash representing the Job content" .Values.job.hash }}
-{{- printf "%s-%s" (include "pre-hook-job.fullname" .) $hash | trunc 63 | trimSuffix "-" }}
+{{- $name := printf "%s-%s" (include "pre-hook-job.fullname" .) $hash }}
+{{- if gt (len $name) 63 }}
+{{- fail (printf "job name '%s' exceeds 63 characters (%d) — use fullnameOverride or a shorter hash to reduce length" $name (len $name)) }}
+{{- end }}
+{{- $name }}
 {{- end }}
 
-{{/*
-Create the name of the service account to use.
-*/}}
-{{- define "pre-hook-job.serviceAccountName" -}}
-{{- .Values.serviceAccountName }}
-{{- end }}

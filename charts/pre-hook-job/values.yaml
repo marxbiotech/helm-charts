@@ -9,7 +9,7 @@ job:
   hash: ""
   # -- Helm hook weight — controls execution order among multiple hooks (lower runs first)
   hookWeight: "-1"
-  # -- Helm hook delete policy — "hook-failed" deletes on failure so Helm can retry; keeps succeeded for log inspection
+  # -- Helm hook delete policy — "hook-failed" deletes the Job on failure so it does not block future upgrades; succeeded Jobs are kept for log inspection
   hookDeletePolicy: "hook-failed"
   # -- Job backoff limit — number of retries before marking as failed
   backoffLimit: 3
