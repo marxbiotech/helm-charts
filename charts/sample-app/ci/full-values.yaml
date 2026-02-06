@@ -3,6 +3,8 @@ replicaCount: 2
 nameOverride: "myapp"
 fullnameOverride: "myapp-full"
 
+containerPort: 8080
+
 image:
   tag: "1.27.4-alpine"
 
@@ -13,7 +15,7 @@ podAnnotations:
   prometheus.io/scrape: "true"
 
 podSecurityContext:
-  fsGroup: 1000
+  runAsNonRoot: false
 
 securityContext:
   allowPrivilegeEscalation: false
