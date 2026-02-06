@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "replicaCount": {
+      "description": "Number of pod replicas",
+      "type": "integer",
+      "minimum": 1
+    },
+    "containerPort": {
+      "description": "Port the container listens on",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "image": {
+      "description": "Container image configuration",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repository": {
+          "description": "Container image repository",
+          "type": "string",
+          "minLength": 1
+        },
+        "pullPolicy": {
+          "description": "Image pull policy",
+          "type": "string",
+          "enum": ["Always", "IfNotPresent", "Never"]
+        },
+        "tag": {
+          "description": "Image tag (defaults to Chart.AppVersion)",
+          "type": "string"
+        }
+      }
+    },
+    "imagePullSecrets": {
+      "description": "Registry pull secrets",
+      "type": "array"
+    },
+    "nameOverride": {
+      "description": "Override the chart name",
+      "type": "string"
+    },
+    "fullnameOverride": {
+      "description": "Override the full release name",
+      "type": "string"
+    },
+    "podAnnotations": {
+      "description": "Annotations added to pods",
+      "type": "object"
+    },
+    "podSecurityContext": {
+      "description": "Pod-level security context",
+      "type": "object"
+    },
+    "securityContext": {
+      "description": "Container-level security context",
+      "type": "object"
+    },
+    "service": {
+      "description": "Kubernetes Service configuration",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "description": "Service type",
+          "type": "string",
+          "enum": ["ClusterIP", "NodePort", "LoadBalancer"]
+        },
+        "port": {
+          "description": "Service port",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        }
+      }
+    },
+    "resources": {
+      "description": "CPU/memory resource requests and limits",
+      "type": "object"
+    },
+    "nodeSelector": {
+      "description": "Node selector constraints",
+      "type": "object"
+    },
+    "tolerations": {
+      "description": "Pod tolerations",
+      "type": "array"
+    },
+    "affinity": {
+      "description": "Pod affinity and anti-affinity rules",
+      "type": "object"
+    }
+  }
+}

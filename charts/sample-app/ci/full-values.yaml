@@ -1,22 +1,23 @@
 replicaCount: 2
 
 nameOverride: "myapp"
+fullnameOverride: "myapp-full"
 
-serviceAccount:
-  create: true
-  annotations:
-    eks.amazonaws.com/role-arn: "arn:aws:iam::role/test"
-  name: "custom-sa"
+containerPort: 80
+
+image:
+  tag: "1.27.4-alpine"
+
+imagePullSecrets:
+  - name: regcred
 
 podAnnotations:
   prometheus.io/scrape: "true"
 
 podSecurityContext:
-  fsGroup: 1000
+  runAsNonRoot: false
 
 securityContext:
-  runAsNonRoot: true
-  runAsUser: 1000
   allowPrivilegeEscalation: false
 
 resources:
