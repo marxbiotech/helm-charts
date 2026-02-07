@@ -11,8 +11,15 @@ The Job will run automatically before the main application is installed or upgra
 To check Job status after a release:
   kubectl get jobs -l "app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=pre-hook" -n {{ .Release.Namespace }}
 
-To view Job logs (available for both succeeded and failed Jobs until the next install/upgrade):
+{{- if not (kindIs "invalid" .Values.job.ttlSecondsAfterFinished) }}
+To view Job logs (available for {{ .Values.job.ttlSecondsAfterFinished }}s after completion, or until the next install/upgrade — whichever comes first):
+{{- else }}
+To view Job logs (available until the next install/upgrade):
+{{- end }}
   kubectl logs job/{{ include "pre-hook-job.jobName" . }} -n {{ .Release.Namespace }}
+
+⚠️  UPGRADE NOTE (v0.3.0): Default hookDeletePolicy changed from "hook-failed" to "before-hook-creation".
+  If you relied on the old default, set job.hookDeletePolicy=hook-failed explicitly.
 {{- else }}
 pre-hook-job is disabled (job.enabled=false). No resources were created.
 {{- end }}
