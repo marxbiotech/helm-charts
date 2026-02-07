@@ -9,8 +9,8 @@ job:
   hash: ""
   # -- Helm hook weight — controls execution order among multiple hooks (lower runs first)
   hookWeight: "-1"
-  # -- Helm hook delete policy — "hook-failed" deletes the Job on failure so it does not block future upgrades; succeeded Jobs are kept for log inspection
-  hookDeletePolicy: "hook-failed"
+  # -- Helm hook delete policy — "before-hook-creation" keeps both failed and succeeded Jobs for log inspection; old hook resources are cleaned up before the next install/upgrade
+  hookDeletePolicy: "before-hook-creation"
   # -- Job backoff limit — number of retries before marking as failed
   backoffLimit: 3
   # -- TTL seconds after Job finishes — auto-cleanup succeeded Jobs (set to null to omit)
