@@ -3,7 +3,7 @@ job:
   enabled: true
   hash: "ci-full"
   hookWeight: "-2"
-  hookDeletePolicy: "hook-failed"
+  hookDeletePolicy: "before-hook-creation"
   backoffLimit: 5
   ttlSecondsAfterFinished: 3600
   annotations:

@@ -3,6 +3,10 @@
 {{- if not (or .Values.image.digest .Values.image.tag) }}
 {{- fail "either image.tag or image.digest is required — specify an explicit image reference (no floating tags)" }}
 {{- end }}
+{{- $validPolicies := list "hook-succeeded" "hook-failed" "before-hook-creation" }}
+{{- if not (has .Values.job.hookDeletePolicy $validPolicies) }}
+{{- fail (printf "job.hookDeletePolicy must be one of %s, got: %s" ($validPolicies | join ", ") .Values.job.hookDeletePolicy) }}
+{{- end }}
 apiVersion: batch/v1
 kind: Job
 metadata:
