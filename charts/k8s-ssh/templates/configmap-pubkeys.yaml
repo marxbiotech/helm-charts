@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "k8s-ssh.fullname" . }}-pubkeys
+  labels:
+    {{- include "k8s-ssh.labels" . | nindent 4 }}
+data:
+  {{- /* Design Decision: Keep required check — all deployments must specify SSH users.
+         Empty users: {} passes required but renders empty ConfigMap, which is acceptable.
+         CI uses ci/default-values.yaml with dummy keys. */ -}}
+  {{- if (required "Missing users and their public keys!!!" .Values.users) }}
+  {{- toYaml .Values.users | nindent 2 }}
+  {{- end }}

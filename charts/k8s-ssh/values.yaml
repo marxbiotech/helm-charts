@@ -1,0 +1,29 @@
+# ---- K8S-SSH ---- #
+nameOverride: ""
+fullnameOverride: ""
+image:
+  name: "shlomibendavid/k8s-ssh@sha256:a3af895d5ec6f66d765377db91eaaa4dac0f05ad349253d126204c3429ebdf91"
+  pullPolicy: IfNotPresent
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 20m
+    memory: 50Mi
+updateStrategy: OnDelete
+hostPID: true
+enableServiceLinks: true
+hostIPC: true
+hostNetwork: true
+restartPolicy: Always
+terminationGracePeriodSeconds: 30
+nodeSelector:
+  kubernetes.io/os: linux
+securityContext:
+  privileged: true
+
+# users and their public keys
+# Key name is arbitrary (used as ConfigMap data key), not a system username
+users: {}
+# my-key: "ssh-ed25519 AAAA... user@host"
