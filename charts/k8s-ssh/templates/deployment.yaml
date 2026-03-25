@@ -1,12 +1,13 @@
 apiVersion: apps/v1
-kind: DaemonSet
+kind: Deployment
 metadata:
   name: {{ include "k8s-ssh.fullname" . }}
   labels:
     {{- include "k8s-ssh.labels" . | nindent 4 }}
 spec:
-  updateStrategy:
-    type: {{ .Values.updateStrategy }}
+  replicas: {{ .Values.replicas }}
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       {{- include "k8s-ssh.selectorLabels" . | nindent 6 }}
@@ -21,8 +22,10 @@ spec:
       hostIPC: {{ .Values.hostIPC }}
       hostNetwork: {{ .Values.hostNetwork }}
       restartPolicy: {{ .Values.restartPolicy }}
+      {{- with .Values.nodeSelector }}
       nodeSelector:
-      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ include "k8s-ssh.name" . }}
           image: {{ .Values.image.name }}
