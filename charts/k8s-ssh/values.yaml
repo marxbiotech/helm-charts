@@ -1,0 +1,65 @@
+# ---- K8S-SSH ---- #
+name: k8s-ssh
+namespace: bastion
+image:
+  name: "shlomibendavid/k8s-ssh:0304242031"
+  pullPolicy: IfNotPresent
+command:
+  - /bin/bash
+  - -c
+  - /usr/local/bin/entrypoint.sh
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 20m
+    memory: 50Mi
+updateStrategy: OnDelete
+disableCpuLimit: "false"
+hostPID: "true"
+enableServiceLinks: "true"
+hostIPC: "true"
+hostNetwork: "true"
+restartPolicy: Always
+terminationGracePeriodSeconds: 30
+nodeSelector:
+  kubernetes.io/os: linux
+securityContext:
+  privileged: true
+
+# users and their public keys
+users: {}
+# root: "ssh-ed25519 AAAA... user@host"
+
+# Host filesystem mount path inside container
+# containerd runtime requires /host mount (not /)
+hostMountPath: /host
+
+volumeMounts:
+  - name: root
+    mountPath: /host
+  - name: dbus
+    mountPath: /host/var/lib/dbus
+  - name: ssh-keys
+    mountPath: /mnt/keys
+  - name: entrypoint
+    mountPath: /usr/local/bin
+
+volumes:
+  - name: root
+    hostPath:
+      path: /
+      type: ""
+  - name: dbus
+    hostPath:
+      path: /var/lib/dbus
+      type: ""
+  - name: ssh-keys
+    configMap:
+      defaultMode: 0420
+      name: k8s-ssh-pubkeys
+  - name: entrypoint
+    configMap:
+      defaultMode: 0777
+      name: k8s-ssh-entrypoint

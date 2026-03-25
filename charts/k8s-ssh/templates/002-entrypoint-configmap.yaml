@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.name }}-entrypoint
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.name }}
+data:
+  entrypoint.sh: |-
+{{- .Files.Get "scripts/entrypoint.sh" | nindent 4 }}

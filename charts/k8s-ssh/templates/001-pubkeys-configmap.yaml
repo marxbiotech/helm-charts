@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.name }}-pubkeys
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.name }}
+data:
+  {{- if (required "Missing users and their public keys!!!" .Values.users) }}
+  {{- toYaml .Values.users | nindent 2 }}
+  {{- end }}
