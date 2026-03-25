@@ -53,7 +53,7 @@ spec:
         - name: dbus
           hostPath:
             path: /var/lib/dbus
-            type: Directory
+            type: DirectoryOrCreate
         - name: ssh-keys
           configMap:
             defaultMode: 0400
