@@ -2,7 +2,7 @@ apiVersion: v2
 name: k8s-ssh
 description: Deploy a Deployment that enables SSH access to a Kubernetes node by injecting SSH public keys
 type: application
-version: 2.0.0
+version: 2.1.0
 appVersion: "0.0.3"
 maintainers:
   - name: xin
