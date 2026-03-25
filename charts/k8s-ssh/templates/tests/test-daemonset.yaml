@@ -9,11 +9,6 @@ metadata:
 spec:
   containers:
     - name: test
-      image: busybox:1.37
+      image: busybox
       command: ['sh', '-c', 'echo "k8s-ssh chart installed successfully"']
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        allowPrivilegeEscalation: false
-        readOnlyRootFilesystem: true
   restartPolicy: Never
