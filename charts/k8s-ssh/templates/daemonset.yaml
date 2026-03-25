@@ -56,9 +56,9 @@ spec:
             type: Directory
         - name: ssh-keys
           configMap:
-            defaultMode: 0420
+            defaultMode: 0400
             name: {{ include "k8s-ssh.fullname" . }}-pubkeys
         - name: entrypoint
           configMap:
-            defaultMode: 0777
+            defaultMode: 0555
             name: {{ include "k8s-ssh.fullname" . }}-entrypoint
