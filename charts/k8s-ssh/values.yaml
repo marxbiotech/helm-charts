@@ -2,7 +2,7 @@
 nameOverride: ""
 fullnameOverride: ""
 image:
-  name: "shlomibendavid/k8s-ssh:0304242031"
+  name: "shlomibendavid/k8s-ssh@sha256:a3af895d5ec6f66d765377db91eaaa4dac0f05ad349253d126204c3429ebdf91"
   pullPolicy: IfNotPresent
 resources:
   limits:
