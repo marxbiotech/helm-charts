@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "k8s-ssh.fullname" . }}
+  labels:
+    {{- include "k8s-ssh.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "k8s-ssh.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: ssh
+      port: 22
+      targetPort: 22
+      protocol: TCP
