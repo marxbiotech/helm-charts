@@ -11,7 +11,7 @@ resources:
   requests:
     cpu: 20m
     memory: 50Mi
-updateStrategy: OnDelete
+replicas: 1
 hostPID: true
 enableServiceLinks: true
 hostIPC: true
