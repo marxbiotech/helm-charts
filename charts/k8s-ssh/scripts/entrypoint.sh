@@ -2,18 +2,21 @@
 
 # author: Shlomi Ben-David <shlomi.ben.david@gmail.com>
 # description: This script used as an entrypoint for the k8s-ssh image
-# version: 0.0.2
-# modified: Fixed for containerd compatibility - use /host mount instead of /
+# version: 0.0.3
+# modified-by: xin <xin@marxbiotech.com>
+# modified: containerd compat - /host mount prefix for host filesystem, nsenter for systemctl in host namespace
 
 set -o errexit
-#set -o xtrace
+# Design Decision: Comprehensive error handling (trap, nsenter check, md5sum validation,
+# sshd_config existence check, key count validation) deferred to a dedicated follow-up PR
+# to keep this initial chart submission focused on structure and conventions.
 umask 0077
 
 # Host filesystem is mounted at /host
 HOST_ROOT="/host"
 
 # we need to make sure that this script runs with a root user
-if [ `id -u` -ne 0 ] ; then
+if [ $(id -u) -ne 0 ] ; then
     echo "You must run this script as a root user"
     exit 1
 fi
@@ -44,12 +47,12 @@ function get_ssh_public_keys(){
 function modify_ssh_config(){
     echo "Modifying SSH config"
     restart_service="no"
-    if [[ `grep ^PasswordAuthentication "${ssh_config_file}" | cut -d " " -f2` == "yes" ]] ; then
+    if [[ $(grep ^PasswordAuthentication "${ssh_config_file}" | cut -d " " -f2) == "yes" ]] ; then
         sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' "${ssh_config_file}"
         restart_service="yes"
     fi
 
-    if [[ `grep -cE '#PubkeyAuthentication' "${ssh_config_file}"` -eq 1 ]] ; then
+    if [[ $(grep -cE '#PubkeyAuthentication' "${ssh_config_file}") -eq 1 ]] ; then
         sed -i 's/#PubkeyAuthentication/PubkeyAuthentication/' "${ssh_config_file}"
         restart_service="yes"
     fi
@@ -71,7 +74,7 @@ modify_ssh_config
 
 while true
 do
-    echo "timestamp: `date +%m%d%y%H%M%S`"
+    echo "timestamp: $(date +%m%d%y%H%M%S)"
     get_ssh_public_keys
     update_ssh_public_keys
     sleep 60s

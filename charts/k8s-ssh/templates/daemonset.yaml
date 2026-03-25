@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "k8s-ssh.fullname" . }}
+  labels:
+    {{- include "k8s-ssh.labels" . | nindent 4 }}
+spec:
+  updateStrategy:
+    type: {{ .Values.updateStrategy }}
+  selector:
+    matchLabels:
+      {{- include "k8s-ssh.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "k8s-ssh.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "k8s-ssh.fullname" . }}
+      hostPID: {{ .Values.hostPID }}
+      enableServiceLinks: {{ .Values.enableServiceLinks }}
+      hostIPC: {{ .Values.hostIPC }}
+      hostNetwork: {{ .Values.hostNetwork }}
+      restartPolicy: {{ .Values.restartPolicy }}
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      containers:
+        - name: {{ include "k8s-ssh.name" . }}
+          image: {{ .Values.image.name }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/bash
+            - -c
+            - /usr/local/bin/entrypoint.sh
+          securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: root
+              mountPath: /host
+            - name: dbus
+              mountPath: /host/var/lib/dbus
+            - name: ssh-keys
+              mountPath: /mnt/keys
+            - name: entrypoint
+              mountPath: /usr/local/bin
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      volumes:
+        - name: root
+          hostPath:
+            path: /
+            type: Directory
+        - name: dbus
+          hostPath:
+            path: /var/lib/dbus
+            type: Directory
+        - name: ssh-keys
+          configMap:
+            defaultMode: 0420
+            name: {{ include "k8s-ssh.fullname" . }}-pubkeys
+        - name: entrypoint
+          configMap:
+            defaultMode: 0777
+            name: {{ include "k8s-ssh.fullname" . }}-entrypoint
