@@ -17,3 +17,19 @@ is the authoritative artifact currently consumed by downstream deployments.
 The matching source commit differs from the published package only in
 `Chart.yaml`: the source includes Helm 2 `tillerVersion` metadata that is not
 present in the package.
+
+## Maintenance Decisions
+
+### No `helm test` under `templates/tests/` yet (deferred)
+
+Unlike the repo's first-party charts (`sample-app`, `pre-hook-job`, `k8s-ssh`),
+this chart does not yet ship a `templates/tests/` connection test. Adding one is
+deferred to a dedicated follow-up rather than done in the import PR, because it
+is a chart-wide convention task independent of any single feature and would
+require the CI fixtures to grow a full `service:` definition and container port
+purely to give the test something to reach. In the meantime `ct install` on Kind
+still validates that the chart installs and renders on a live cluster. When the
+follow-up lands, add a `templates/tests/test-connection.yaml` mirroring
+`charts/sample-app/templates/tests/test-connection.yaml`, adapted to this
+chart's conventions (Service name is `.Values.name`; no `simple.fullname` helper
+exists, and the connecting fixture must define `service:` + a port).
