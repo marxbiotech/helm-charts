@@ -1,0 +1,342 @@
+name: app-name
+
+replicaCount: 1
+
+# Required: please quote the businessid as string
+# businessid: "xxxxxxxxxxxxxxxxxx"
+
+# Note: Please indicate labels of the specific node you willing to place your pods
+# nodeSelector:
+#   labelName: nodegroup
+#   labelValue: "ec-eks-db-cpu-node-autoscaling-group"
+
+# tolerations:
+# - key: "shop-callback-node"
+#   operator: "Equal"
+#   value: "true"
+#   effect: "NoSchedule"
+
+# Note: Please indicate security contexts in here
+# securityContextForPod:
+#   runAsUser: 1000
+#   runAsGroup: 1000
+#   fsGroup: 1000
+
+# topologySpreadConstraints:
+#   - labelSelector:
+#       matchLabels:
+#         app: app-name
+#     maxSkew: 1
+#     topologyKey: topology.kubernetes.io/zone
+#     whenUnsatisfiable: DoNotSchedule
+#   - labelSelector:
+#       matchLabels:
+#         app: app-name
+#     maxSkew: 1
+#     topologyKey: kubernetes.io/hostname
+#     whenUnsatisfiable: ScheduleAnyway
+
+affinity:
+  nodeAffinity: {}
+  podAffinity: {}
+  # if you set .podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution,you will combined with default setting.
+  # default: prefer difference az(weight:100) and node(weight:99)
+  podAntiAffinity: {}
+
+deployment: {}
+# deployment example
+# deployment:
+#   annotations:
+#     checksum/config: checksum
+#     checksum/config.yml: compute_checksum::configmaps/app-config/data/config.yml # `compute_checksum` will compute the sha256 checksum of the content
+#   containers:
+#     example-app:
+#       name: example-app
+#       image:
+#         repository: example-app
+#         tag: latest
+#       env:
+#         RAILS_ENV: staging
+#       envSecrets:
+#         MONGODB_USER:
+#           name: mongodb
+#           key: MONGODB_USER
+#       volumes:
+#       - name: app-config-1
+#         subPath: config.yaml
+#         path: /app/config.yaml
+#   volumes:
+#     - name: app-config-1
+#       configMap: {}
+#   dnsConfig:
+#     options:
+#       - name: ndots
+#         value: "2"
+
+# configmaps example
+# configmaps:
+#   app-config:
+#     name: app-config-1
+#     data:
+#       config.yaml: |
+#         test: 1
+
+container:
+  image:
+    repository: repository_name/image
+    tag: tag
+
+global:
+  imagePullPolicy: IfNotPresent
+
+EnableMutilpleIngress: false
+# EnableMutilpleIngress: true
+# ingress:
+#   internal-ingress:
+#     annotations:
+#       kubernetes.io/ingress.class: alb
+#     rules:
+#       - host:
+#         http:
+#           paths:
+#           - backend:
+#               serviceName: example
+#               servicePort: 80
+#             path: /health_check
+#             pathType: ImplementationSpecific
+#   external-ingress:
+#     annotations:
+#       kubernetes.io/ingress.class: alb
+#     rules:
+#       - host:
+#         http:
+#           paths:
+#           - backend:
+#               serviceName: example
+#               servicePort: 80
+#             path: /health_check
+#             pathType: ImplementationSpecific
+
+# for single service
+# service:
+#   ports:
+#     - name: python-operator
+#       port: 80
+#       target: 5000
+#   type: ClusterIP
+#   clusterIP: 10.100.0.0
+#   selector:
+#     app: python-operator
+
+# for multiple service
+# services:
+#   service-1: # service name
+#     ports:
+#       - name: "svc"
+#         port: 8080
+#     type: ClusterIP
+#     clusterIP: 10.100.0.0
+#     selector:
+#       app: svc
+#   service-2: # service name
+#     type: ExternalName
+#     externalName: example.com
+
+pdb:
+  # If you just set "enable: true", default will set to "minAvailable: 50%" unless you have set other parameters.
+  enable: false
+  # Note: You can specify only one of maxUnavailable and minAvailable in a single PodDisruptionBudget, and if you setting both will only set maxUnavailable.
+  # minAvailable: 50%
+  # maxUnavailable: 50%
+
+# autoscaling/v1 block
+# hpa:
+#   minReplicas: 1
+#   maxReplicas: 2
+#   targetCPUUtilizationPercentage: 60
+
+# autoscaling/v2beta2 block
+# hpav2:
+#   minReplicas: 1
+#   maxReplicas: 2
+#   # k8s hpav2 native only support cpu and memory
+#   Resource:
+#     - name: cpu
+#       # simple chart support percent and value setting
+#       percent: 60
+#     - name: memory
+#       value: 100Mi
+#   # setting external mertics
+#   External:
+#     - metricName: shop-nc-alb-request
+#       # type support Value and AverageValue
+#       type: Value
+#       value: 10
+
+# ExternalMetric:
+#   name: shop-nc-alb-request
+#   # queries setting please reference AWS cloudwatch api document link:
+#   # https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_GetMetricData.html#API_GetMetricData_Examples
+#   queries:
+#     # Note: id can't use "-"
+#     - id: shop_nc_alb_request
+#       metricNamespace: AWS/ApplicationELB
+#       metricName: RequestCount
+#       metricsDimensions:
+#         - name: LoadBalancer
+#           value: app/397da054-core-shopnc-5edd/d8f7dcbb27908840
+#       period: 60
+#       stat: Sum
+#       unit: Count
+
+# role:
+#   name: role_name
+#   rules:
+#     - apiGroups: [""]
+#       resources: ["pods"]
+#       verbs: ["watch", "list", "get"]
+# roleBinding:
+#   name: rolebinding_name
+#   roleRef:
+#     name: role_name
+#   subjects:
+#   - kind: ServiceAccount
+#     name: service_account_name
+#     namespace: service_account_namespace
+
+# clusterRole:
+#   name: clusterrole_name
+#   rules:
+#     - apiGroups: [""]
+#       resources: ["pods"]
+#       verbs: ["watch", "list", "get"]
+# clusterRoleBinding:
+#   name: clusterrolebinding_name
+#   roleRef:
+#     name: clusterrole_name
+#   subjects:
+#   - kind: ServiceAccount
+#     name: service_account_name
+#     namespace: service_account_namespace
+
+externalSecrets: {}
+# externalSecrets:
+#   example-env-new:
+#     secretStore:
+#       aws:
+#         region: "ap-southeast-1" # optional, default "ap-southeast-1"
+#         arn: "arn:aws:iam::xxx:role/xxxx" # optional, default use deployment service role
+#     refreshInterval: 1m # optional, default 1h
+#     dataFrom:
+#     - extract:
+#         key: example-secret
+#         version: "uuid/VersionId"
+
+# secrets:
+#   example-env:
+#     data:
+#       data_name: YW5keWNodWFuZw==
+#       data_tls: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUNxRENDQVpBQ0NRQ3NtSEY1ODZDVTRUQU5CZ2txaGtpRzl3MEJBUXNGQURBV01SUXdFZ1lEVlFRRERBdG0KLi4uCnhjUGFMNEdDZ1VsKzhUaUsKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+#     # no need to base64 encode
+#     stringData:
+#       str_name: "andychuang"
+#       str_tls: |-
+#        -----BEGIN CERTIFICATE-----
+#        MIICqDCCAZACCQCsmHF586CU4TANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQDDAtm
+#        ...
+#        xcPaL4GCgUl+8TiK
+#        -----END CERTIFICATE-----
+
+# serviceMonitors:
+#   mongodb-observer:
+#     namespaceSelector:
+#       - shoplytics
+#     selector:
+#       matchLabels:
+#         app: mongodb-observer # which service you want to match
+#     endpoints:
+#       - port: http # port name of the service expose
+
+# podMonitors:
+#   mongodb-observer:
+#     namespaceSelector:
+#       - shoplytics
+#     selector:
+#       matchLabels:
+#         app: mongodb-observer # which service you want to match
+#     podMetricsEndpoints:
+#       - port: http # port name of the service expose
+
+# Don’t combine ScaledObject with Horizontal Pod Autoscaler (HPA)
+# exmaple yaml please refer to example/example-keda.yaml
+# KEDA:
+#   ScaledObject:
+#     spec: {}
+
+# rollout: {}
+# https://argoproj.github.io/argo-rollouts/features/specification/
+# rollout:
+#   annotations:
+#     notifications.argoproj.io/subscribe.on-rollout-completed.slack_webhook: ""
+#   revisionHistoryLimit: 10
+#   replicas: 10 # Required, recommend this value should be greater/equal than HPA minimum capacity to prevent performance downgrade when project upgrade.
+#   strategy:
+#   # blueGreen and canary CANNOT exist at the same time
+#     blueGreen:
+#       activeService: "app-name" # If uses service, this is an optional value; if uses services, then this is a required value
+#       previewService: "app-name-preview"  # If uses service, this is an optional value; if uses services, then this is a required value
+#       autoPromotionEnabled: false # Required value. if you don't want auto promotion, type false.
+#       extra:
+#         prePromotionAnalysis:
+#           templates:
+#           - templateName: success-rate
+#           args:
+#           - name: service-name
+#             value: guestbook-svc.default.svc.cluster.local
+#     canary:
+#       canaryService: "app-name-canary" # If uses service, this is an optional value; if uses services, then this is a required value
+#       stableService: "app-name-stable"# If uses service, this is an optional value; if uses services, then this is a required value
+#       steps:
+#         - setWeight: 10
+#         - pause: { duration: 1h }
+#         - analysis:
+#             templates:
+#             - templateName: success-rate
+#         - setWeight: 100
+#       trafficRouting:
+#         alb: # If choose trafficRouting.alb, remember to modify ingress servicePort: use-annotation
+#           ingress: ingress
+#           servicePort: 443
+#           rootService: "app-name" # origin service name
+#       extra:
+#         analysis:
+#           templates:
+#           - templateName: success-rate
+#           args:
+#           - name: service-name
+#             value: guestbook-svc.default.svc.cluster.local
+
+analyses: {}
+# https://argoproj.github.io/argo-rollouts/features/analysis
+# analyses:
+#   success-rate:
+#     spec:
+#       dryRun:
+#       - metricName: .*
+#       args:
+#       - name: service-name
+#       metrics:
+#       - name: success-rate
+#         interval: 5m
+#         successCondition: result[0] >= 0.95
+#         failureLimit: 3
+#         provider:
+#           prometheus:
+#             address: http://prometheus.example.com:9090
+#             query: |
+#               sum(irate(
+#                 istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code!~"5.*"}[5m]
+#               )) /
+#               sum(irate(
+#                 istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}"}[5m]
+#               ))
