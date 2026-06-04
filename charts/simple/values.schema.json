@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "enableServiceLinks": {
+      "description": "Set false to stop Kubernetes injecting {SVCNAME}_SERVICE_HOST/_PORT env vars for in-namespace Services into Pods. Unset defaults to the Kubernetes default (true).",
+      "type": "boolean"
+    }
+  }
+}

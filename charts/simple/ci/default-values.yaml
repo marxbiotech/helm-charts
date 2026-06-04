@@ -1,0 +1,11 @@
+# Design Decision: 此 fixture 刻意不設 enableServiceLinks,因此 ct install 不會渲染
+# deployment.yaml 的 enableServiceLinks block(該 block 以 hasKey 守衛,值不存在即跳過)。
+# 為 enableServiceLinks 補一個設 false 的獨立 CI fixture 以覆蓋此分支的工作,
+# 已刻意延後;feature 本身已驗證 true/false/absent 三態渲染正確,缺的只是 CI regression 防護。
+name: simple-test
+businessid: "test-business"
+
+container:
+  image:
+    repository: nginx
+    tag: "1.25"
