@@ -35,6 +35,17 @@ helm test my-release                                             # 執行 chart 
 4. `_helpers.tpl` 命名慣例：`<chart-name>.name`、`<chart-name>.fullname`、`<chart-name>.labels`、`<chart-name>.selectorLabels`；若 chart 需要 ServiceAccount 則另加 `<chart-name>.serviceAccountName`
 5. Job-type chart 額外慣例：hash-based naming（`<chart-name>.jobName`）、`app.kubernetes.io/component` label、`required` 強制必填欄位
 
+## Vendored Chart 慣例
+
+從上游匯入的 vendored chart（如 `simple`）與第一方 chart 處理方式不同，詳見 [`docs/vendored-charts.md`](docs/vendored-charts.md)。
+
+**核心原則**：template 邏輯與 values surface 屬於上游，不要硬套第一方慣例。
+
+**必須參考的情境：**
+1. 匯入新的 vendored chart 時——附 `UPSTREAM.md` 記錄 published package 與 matching source commit。
+2. 為 vendored chart 補 `values.schema.json`——用 `additionalProperties: true` 只驗自己新增的 key，勿 schematize 整個上游 surface（否則會擋掉既有 key）。
+3. helm test 可延後，但理由與 follow-up 計畫要寫進 `UPSTREAM.md` 的 Maintenance Decisions。
+
 ## 發布流程
 
 - **PR 階段**（`lint-test.yaml`，觸發：`pull_request` → `main`）：`ct list-changed` 偵測變更 → `ct lint` 驗證 → Kind 叢集上 `ct install` 安裝測試
