@@ -1,0 +1,7 @@
+name: simple-test
+businessid: "test-business"
+
+container:
+  image:
+    repository: nginx
+    tag: "1.25"

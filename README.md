@@ -8,6 +8,7 @@ Production-ready Helm charts published as OCI artifacts to [GitHub Container Reg
 |-------|-------------|
 | [sample-app](./charts/sample-app) | A sample Helm chart for Kubernetes |
 | [pre-hook-job](./charts/pre-hook-job) | A generic chart for pre-install/pre-upgrade hook Jobs (DB migrations, seeding) |
+| [simple](./charts/simple) | A generic Deployment/Service chart imported from Shopline's simple chart |
 
 ## Install a Chart
 

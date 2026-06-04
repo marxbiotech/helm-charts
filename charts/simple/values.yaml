@@ -22,6 +22,9 @@ replicaCount: 1
 #   runAsGroup: 1000
 #   fsGroup: 1000
 
+# Set to false to prevent Kubernetes from injecting Service environment variables into Pods.
+# enableServiceLinks: false
+
 # topologySpreadConstraints:
 #   - labelSelector:
 #       matchLabels:
