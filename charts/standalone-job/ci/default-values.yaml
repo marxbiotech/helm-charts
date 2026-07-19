@@ -1,0 +1,14 @@
+# Minimal enabled configuration for chart-testing.
+job:
+  enabled: true
+  runId: ci-default
+
+image:
+  repository: busybox
+  tag: "1.37"
+
+command: ["sh", "-c"]
+args: ["echo 'standalone-job default CI test'"]
+
+tests:
+  enabled: true

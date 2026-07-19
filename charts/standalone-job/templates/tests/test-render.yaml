@@ -1,0 +1,28 @@
+{{/*
+Design Decision: This Helm test intentionally verifies test-hook plumbing only.
+Observing the standalone Job's runtime completion requires Kubernetes API RBAC
+and is deferred to a dedicated follow-up.
+*/}}
+{{- if and .Values.job.enabled .Values.tests.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "standalone-job.fullname" . }}-test-render"
+  labels:
+    {{- include "standalone-job.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  containers:
+    - name: test
+      image: "{{ .Values.tests.image.repository }}:{{ .Values.tests.image.tag }}"
+      imagePullPolicy: {{ .Values.tests.image.pullPolicy }}
+      command: ["sh", "-c", "echo 'standalone-job rendered successfully'"]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+  restartPolicy: Never
+{{- end }}

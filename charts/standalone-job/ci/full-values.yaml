@@ -1,0 +1,97 @@
+# Exercise a broad representative configuration.
+job:
+  enabled: true
+  name: standalone-job-ci-full
+  backoffLimit: 5
+  ttlSecondsAfterFinished: 3600
+  activeDeadlineSeconds: 600
+  annotations:
+    example.com/audit-id: ci-full
+  labels:
+    app.example.com/team: platform
+
+image:
+  repository: busybox
+  tag: "1.37"
+
+imagePullPolicy: IfNotPresent
+
+command: ["sh", "-c"]
+args: ["echo \"$MESSAGE\" > /tmp/result"]
+
+env:
+  - name: MESSAGE
+    value: full-ci-test
+
+envFrom:
+  - configMapRef:
+      name: example-config
+      optional: true
+  - secretRef:
+      name: example-secret
+      optional: true
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 16Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  fsGroup: 1000
+
+securityContext:
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+
+volumes:
+  - name: tmp
+    emptyDir: {}
+
+nodeSelector:
+  kubernetes.io/os: linux
+
+tolerations:
+  - key: dedicated
+    operator: Equal
+    value: jobs
+    effect: NoSchedule
+
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+            - key: kubernetes.io/os
+              operator: In
+              values:
+                - linux
+
+restartPolicy: Never
+
+serviceAccount:
+  create: true
+  name: standalone-job-ci
+  annotations:
+    example.com/owner: platform
+
+podAnnotations:
+  prometheus.io/scrape: "false"
+
+podLabels:
+  app.example.com/purpose: chart-test
+
+nameOverride: task
+fullnameOverride: standalone-task
+
+tests:
+  enabled: true

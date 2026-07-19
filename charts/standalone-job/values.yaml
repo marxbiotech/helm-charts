@@ -1,0 +1,104 @@
+# Default values for standalone-job.
+# Designed for safe use as a subchart: no resources are rendered until job.enabled is true.
+
+# -- Job configuration
+job:
+  # -- Enable the Job. Keep false during normal umbrella chart upgrades.
+  enabled: false
+  # -- Unique identifier for this run (for example, backfill-dry-run-20260719).
+  # Required when enabled unless job.name is set.
+  runId: ""
+  # -- Explicit readable Job name base for this run. Takes precedence over job.runId.
+  # The chart appends an 8-character behavior hash and safely truncates this base
+  # when needed so the generated Kubernetes Job name remains within 63 characters.
+  # Reusing the same base with identical behavior produces the same deterministic name.
+  name: ""
+  # -- Number of retries before the Job is marked failed.
+  backoffLimit: 3
+  # -- Seconds to retain a finished Job. Set to null to disable automatic cleanup.
+  ttlSecondsAfterFinished: 86400
+  # -- Maximum runtime in seconds. Set to null to omit.
+  activeDeadlineSeconds: null
+  # -- Additional annotations for the Job.
+  annotations: {}
+  # -- Additional labels for the Job.
+  labels: {}
+
+# -- Container image configuration
+image:
+  # -- Image repository. Required when job.enabled is true.
+  repository: ""
+  # -- Image tag. Required when enabled unless image.digest is set.
+  tag: ""
+  # -- Image digest. Takes precedence over image.tag.
+  # Design Decision: Allow tag and digest together for layered values; rejecting
+  # both is deferred to a future breaking contract change.
+  digest: ""
+
+# -- Image pull policy
+# Design Decision: Keep this top-level to match the chart's initial values
+# contract. Moving it under image would be a breaking major-version change.
+imagePullPolicy: IfNotPresent
+
+# -- Image pull secrets for private registries
+imagePullSecrets: []
+
+# -- Command that overrides the image ENTRYPOINT
+command: []
+# -- Arguments that override the image CMD
+args: []
+
+# -- Environment variables for the container
+env: []
+# -- ConfigMap and Secret environment sources
+envFrom: []
+
+# -- Container resource requests and limits
+resources: {}
+
+# -- Pod-level security context
+podSecurityContext: {}
+# -- Container-level security context
+securityContext: {}
+
+# -- Volume mounts for the container
+volumeMounts: []
+# -- Volumes for the pod
+volumes: []
+
+# -- Node selector constraints
+nodeSelector: {}
+# -- Tolerations for node taints
+tolerations: []
+# -- Affinity rules for pod scheduling
+affinity: {}
+
+# -- Pod restart policy. Kubernetes Jobs support Never and OnFailure.
+restartPolicy: Never
+
+# -- Service account configuration
+serviceAccount:
+  # -- Create a dedicated ServiceAccount when the Job is enabled.
+  create: false
+  # -- Existing ServiceAccount name. Defaults to "default" when create is false.
+  name: ""
+  # -- Annotations for the created ServiceAccount.
+  annotations: {}
+
+# -- Additional annotations for the Job pod
+podAnnotations: {}
+# -- Additional labels for the Job pod
+podLabels: {}
+
+# -- Override the chart name used in generated resource names
+nameOverride: ""
+# -- Override the fully qualified base resource name
+fullnameOverride: ""
+
+# -- Optional Helm test configuration. Enable it when a release should include a test pod.
+tests:
+  enabled: false
+  image:
+    repository: busybox
+    tag: "1.37"
+    pullPolicy: IfNotPresent
