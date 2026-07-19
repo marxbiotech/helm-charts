@@ -1,0 +1,19 @@
+# Explicit Helm hook opt-in validation.
+job:
+  enabled: true
+  runId: ci-hook
+  hook:
+    enabled: true
+    events:
+      - post-install
+    weight: "1"
+    deletePolicy:
+      - before-hook-creation
+      - hook-succeeded
+
+image:
+  repository: busybox
+  tag: "1.37"
+
+command: ["sh", "-c"]
+args: ["echo 'explicit hook CI test'"]

@@ -1,0 +1,111 @@
+# Default values for standalone-job.
+# Designed for safe use as a subchart: no resources are rendered until job.enabled is true.
+
+# -- Job configuration
+job:
+  # -- Enable the Job. Keep false during normal umbrella chart upgrades.
+  enabled: false
+  # -- Unique identifier for this run (for example, backfill-dry-run-20260719).
+  # Required when enabled unless job.nameOverride is set.
+  runId: ""
+  # -- Explicit Job name. Must be unique for each run because Job pod templates are immutable.
+  # Takes precedence over job.runId.
+  nameOverride: ""
+  # -- Number of retries before the Job is marked failed.
+  backoffLimit: 3
+  # -- Seconds to retain a finished Job. Set to null to disable automatic cleanup.
+  ttlSecondsAfterFinished: 86400
+  # -- Maximum runtime in seconds. Set to null to omit.
+  activeDeadlineSeconds: null
+  # -- Additional annotations for the Job.
+  annotations: {}
+  # -- Additional labels for the Job.
+  labels: {}
+  # -- Optional Helm hook behavior. Disabled by default.
+  hook:
+    # -- Render this Job as a Helm hook.
+    enabled: false
+    # -- Helm lifecycle events that trigger the hook.
+    events:
+      - post-install
+      - post-upgrade
+    # -- Helm hook weight.
+    weight: "0"
+    # -- Helm hook deletion policies.
+    deletePolicy:
+      - before-hook-creation
+
+# -- Container image configuration
+image:
+  # -- Image repository. Required when job.enabled is true.
+  repository: ""
+  # -- Image tag. Required when enabled unless image.digest is set.
+  tag: ""
+  # -- Image digest. Takes precedence over image.tag.
+  digest: ""
+
+# -- Image pull policy
+imagePullPolicy: IfNotPresent
+
+# -- Image pull secrets for private registries
+imagePullSecrets: []
+
+# -- Command that overrides the image ENTRYPOINT
+command: []
+# -- Arguments that override the image CMD
+args: []
+
+# -- Environment variables for the container
+env: []
+# -- ConfigMap and Secret environment sources
+envFrom: []
+
+# -- Container resource requests and limits
+resources: {}
+
+# -- Pod-level security context
+podSecurityContext: {}
+# -- Container-level security context
+securityContext: {}
+
+# -- Volume mounts for the container
+volumeMounts: []
+# -- Volumes for the pod
+volumes: []
+
+# -- Node selector constraints
+nodeSelector: {}
+# -- Tolerations for node taints
+tolerations: []
+# -- Affinity rules for pod scheduling
+affinity: {}
+
+# -- Pod restart policy. Kubernetes Jobs support Never and OnFailure.
+restartPolicy: Never
+
+# -- Service account configuration
+serviceAccount:
+  # -- Create a dedicated ServiceAccount when the Job is enabled.
+  create: false
+  # -- Existing ServiceAccount name. Defaults to "default" when create is false.
+  name: ""
+  # -- Annotations for the created ServiceAccount.
+  annotations: {}
+
+# -- Additional annotations for the Job pod
+podAnnotations: {}
+# -- Additional labels for the Job pod
+podLabels: {}
+
+# -- Override the chart name used in generated resource names
+nameOverride: ""
+# -- Override the fully qualified base resource name
+fullnameOverride: ""
+
+# -- Helm test configuration. Disabled by default so the disabled chart renders no resources.
+tests:
+  enabled: false
+  image:
+    repository: busybox
+    tag: "1.37"
+    pullPolicy: IfNotPresent

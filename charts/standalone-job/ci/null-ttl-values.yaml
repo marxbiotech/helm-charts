@@ -1,0 +1,13 @@
+# Explicit null values should omit optional Job fields.
+job:
+  enabled: true
+  runId: ci-null-ttl
+  ttlSecondsAfterFinished: null
+  activeDeadlineSeconds: null
+
+image:
+  repository: busybox
+  tag: "1.37"
+
+command: ["sh", "-c"]
+args: ["echo 'null optional fields CI test'"]
