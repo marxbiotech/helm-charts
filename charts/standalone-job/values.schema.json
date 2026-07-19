@@ -2,10 +2,19 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "additionalProperties": false,
+  "required": [
+    "job",
+    "imagePullPolicy",
+    "restartPolicy"
+  ],
   "properties": {
     "job": {
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "enabled",
+        "backoffLimit"
+      ],
       "properties": {
         "enabled": {
           "type": "boolean"
@@ -15,7 +24,7 @@
           "maxLength": 63,
           "pattern": "^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
         },
-        "nameOverride": {
+        "name": {
           "type": "string",
           "maxLength": 63,
           "pattern": "^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
@@ -51,50 +60,6 @@
         },
         "labels": {
           "type": "object"
-        },
-        "hook": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "enabled": {
-              "type": "boolean"
-            },
-            "events": {
-              "type": "array",
-              "minItems": 1,
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "pre-install",
-                  "post-install",
-                  "pre-delete",
-                  "post-delete",
-                  "pre-upgrade",
-                  "post-upgrade",
-                  "pre-rollback",
-                  "post-rollback"
-                ]
-              }
-            },
-            "weight": {
-              "type": "string",
-              "pattern": "^-?[0-9]+$"
-            },
-            "deletePolicy": {
-              "type": "array",
-              "minItems": 1,
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "before-hook-creation",
-                  "hook-succeeded",
-                  "hook-failed"
-                ]
-              }
-            }
-          }
         }
       }
     },
@@ -275,6 +240,9 @@
         }
       },
       "then": {
+        "required": [
+          "image"
+        ],
         "properties": {
           "job": {
             "anyOf": [
@@ -290,10 +258,10 @@
               },
               {
                 "required": [
-                  "nameOverride"
+                  "name"
                 ],
                 "properties": {
-                  "nameOverride": {
+                  "name": {
                     "minLength": 1
                   }
                 }

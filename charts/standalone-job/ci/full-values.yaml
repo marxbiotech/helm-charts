@@ -1,7 +1,7 @@
-# Exercise the complete supported values surface.
+# Exercise a broad representative configuration.
 job:
   enabled: true
-  nameOverride: standalone-job-ci-full
+  name: standalone-job-ci-full
   backoffLimit: 5
   ttlSecondsAfterFinished: 3600
   activeDeadlineSeconds: 600
@@ -9,8 +9,6 @@ job:
     example.com/audit-id: ci-full
   labels:
     app.example.com/team: platform
-  hook:
-    enabled: false
 
 image:
   repository: busybox

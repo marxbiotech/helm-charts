@@ -7,13 +7,27 @@ umbrella chart because `job.enabled` defaults to `false`.
 ## Safety model
 
 - No resources are rendered until `job.enabled=true`.
-- The Job is not a Helm lifecycle hook unless `job.hook.enabled=true`.
 - Every enabled run requires either a unique `job.runId` or an explicit,
-  unique `job.nameOverride`. Kubernetes Job pod templates are immutable, so use
-  a new identifier whenever the command, arguments, image, or configuration
-  changes.
+  unique operator-readable name base in `job.name`.
+- `job.name` takes precedence over `job.runId` when both are set. The top-level
+  `nameOverride` retains its standard Helm meaning and only changes the chart
+  base name used with `job.runId`.
+- The generated Job name is the readable base plus an 8-character behavior
+  hash. The base is either `job.name` or `fullname` + `-` + `job.runId`.
+  Only the base is safely truncated when necessary, so the final DNS label
+  remains at most 63 characters and always retains the hash.
+- The hash includes the original untruncated base and the Job/Pod execution
+  settings. Changing the image, command, arguments, environment, resources,
+  service account, security or scheduling configuration therefore creates a
+  new name and avoids immutable Job pod-template collisions.
+- Naming is deterministic: the same readable base and execution settings
+  produce the same name. Choose a new `job.runId` or `job.name` when repeating
+  an otherwise identical run.
 - An explicit image tag or digest is required; there is no floating default
   image.
+
+In the commands and dependency declaration below, replace `<chart-version>`
+with the intended published chart version before running or copying the example.
 
 ## Simple one-off Job
 
@@ -42,16 +56,20 @@ Run it and inspect the result:
 ```bash
 helm upgrade --install reconcile \
   oci://ghcr.io/marxbiotech/helm-charts/standalone-job \
-  --version 0.1.0 \
+  --version <chart-version> \
   --namespace operations \
   --create-namespace \
   -f values-one-off.yaml
 
-kubectl wait --for=condition=complete \
-  job/reconcile-standalone-job-reconcile-20260719 \
+kubectl get jobs \
+  --selector app.kubernetes.io/instance=reconcile,app.kubernetes.io/component=standalone-job \
+  --namespace operations
+kubectl wait --for=condition=complete job \
+  --selector app.kubernetes.io/instance=reconcile,app.kubernetes.io/component=standalone-job \
   --namespace operations \
   --timeout=30m
-kubectl logs job/reconcile-standalone-job-reconcile-20260719 \
+kubectl logs \
+  --selector app.kubernetes.io/name=standalone-job,app.kubernetes.io/instance=reconcile \
   --namespace operations
 ```
 
@@ -64,7 +82,7 @@ Use a run ID that records both the purpose and execution mode:
 ```yaml
 job:
   enabled: true
-  runId: ordersync-backfill-dry-20260719
+  runId: dry-20260719
   backoffLimit: 1
   activeDeadlineSeconds: 7200
 
@@ -90,7 +108,7 @@ Render and inspect before applying:
 ```bash
 helm template ordersync-backfill \
   oci://ghcr.io/marxbiotech/helm-charts/standalone-job \
-  --version 0.1.0 \
+  --version <chart-version> \
   -f values-dry-run.yaml
 ```
 
@@ -102,7 +120,7 @@ run ID:
 ```yaml
 job:
   enabled: true
-  runId: ordersync-backfill-commit-20260726
+  runId: commit-20260726
   backoffLimit: 1
   activeDeadlineSeconds: 7200
 
@@ -123,8 +141,9 @@ env:
         key: database-url
 ```
 
-The different `runId` produces a different Job name and avoids immutable Job
-spec collisions with the dry-run.
+The different `runId` produces a different readable prefix and hash. A change
+to the execution settings also produces a different hash, avoiding immutable
+Job spec collisions with the dry-run.
 
 ## Umbrella chart dependency
 
@@ -134,7 +153,7 @@ Declare the dependency in the umbrella chart:
 # Chart.yaml
 dependencies:
   - name: standalone-job
-    version: 0.1.0
+    version: <chart-version>
     repository: oci://ghcr.io/marxbiotech/helm-charts
     alias: ordersyncBackfill
 ```
@@ -192,21 +211,3 @@ serviceAccount:
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/batch-job
 ```
-
-## Optional Helm hook mode
-
-Normal Jobs are recommended for operator-triggered runs. If lifecycle hook
-behavior is intentionally required, opt in explicitly:
-
-```yaml
-job:
-  enabled: true
-  runId: post-upgrade-20260719
-  hook:
-    enabled: true
-    events: [post-upgrade]
-    weight: "0"
-    deletePolicy: [before-hook-creation]
-```
-
-Only this mode adds `helm.sh/hook` annotations to the Job.

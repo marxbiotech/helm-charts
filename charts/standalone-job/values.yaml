@@ -6,11 +6,13 @@ job:
   # -- Enable the Job. Keep false during normal umbrella chart upgrades.
   enabled: false
   # -- Unique identifier for this run (for example, backfill-dry-run-20260719).
-  # Required when enabled unless job.nameOverride is set.
+  # Required when enabled unless job.name is set.
   runId: ""
-  # -- Explicit Job name. Must be unique for each run because Job pod templates are immutable.
-  # Takes precedence over job.runId.
-  nameOverride: ""
+  # -- Explicit readable Job name base for this run. Takes precedence over job.runId.
+  # The chart appends an 8-character behavior hash and safely truncates this base
+  # when needed so the generated Kubernetes Job name remains within 63 characters.
+  # Reusing the same base with identical behavior produces the same deterministic name.
+  name: ""
   # -- Number of retries before the Job is marked failed.
   backoffLimit: 3
   # -- Seconds to retain a finished Job. Set to null to disable automatic cleanup.
@@ -21,19 +23,6 @@ job:
   annotations: {}
   # -- Additional labels for the Job.
   labels: {}
-  # -- Optional Helm hook behavior. Disabled by default.
-  hook:
-    # -- Render this Job as a Helm hook.
-    enabled: false
-    # -- Helm lifecycle events that trigger the hook.
-    events:
-      - post-install
-      - post-upgrade
-    # -- Helm hook weight.
-    weight: "0"
-    # -- Helm hook deletion policies.
-    deletePolicy:
-      - before-hook-creation
 
 # -- Container image configuration
 image:
@@ -42,9 +31,13 @@ image:
   # -- Image tag. Required when enabled unless image.digest is set.
   tag: ""
   # -- Image digest. Takes precedence over image.tag.
+  # Design Decision: Allow tag and digest together for layered values; rejecting
+  # both is deferred to a future breaking contract change.
   digest: ""
 
 # -- Image pull policy
+# Design Decision: Keep this top-level to match the chart's initial values
+# contract. Moving it under image would be a breaking major-version change.
 imagePullPolicy: IfNotPresent
 
 # -- Image pull secrets for private registries
@@ -102,7 +95,7 @@ nameOverride: ""
 # -- Override the fully qualified base resource name
 fullnameOverride: ""
 
-# -- Helm test configuration. Disabled by default so the disabled chart renders no resources.
+# -- Optional Helm test configuration. Enable it when a release should include a test pod.
 tests:
   enabled: false
   image:
