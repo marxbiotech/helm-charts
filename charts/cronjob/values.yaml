@@ -1,0 +1,145 @@
+# Default values for cronjob.
+# Designed for safe use as a subchart: no resources are rendered until enabled is true.
+
+# -- Render the CronJob. Kept false so an umbrella chart that declares this
+# chart as a dependency creates nothing until an environment opts in.
+# This is the top-level key Helm's dependency `condition` expects, so a parent
+# may also declare `condition: <alias>.enabled`.
+# Design Decision: `enabled` and `suspend` are separate. `enabled=false` means
+# the CronJob object does not exist; `suspend=true` means it exists but does
+# not fire. A rollout typically installs suspended, verifies the image carries
+# the subcommand, and then flips `suspend` to false.
+enabled: false
+
+# -- Cron schedule in standard five-field syntax, or an @-macro such as
+# @daily. Required when enabled is true; there is no default schedule, so a
+# misconfigured release fails at template time instead of silently firing.
+schedule: ""
+
+# -- IANA time zone for the schedule (for example, Asia/Taipei).
+# Omitted from the manifest when empty, in which case the cluster's
+# kube-controller-manager time zone (normally UTC) applies.
+# Requires Kubernetes 1.27 or later, where spec.timeZone is GA.
+timeZone: ""
+
+# -- Suspend the schedule. The CronJob still exists and can be resumed
+# without a name change.
+suspend: false
+
+# -- What to do when a run is still active at the next scheduled time.
+# Allow, Forbid, or Replace.
+concurrencyPolicy: Forbid
+
+# -- Seconds after the scheduled time within which a missed run may still
+# start. Set to null to omit and use the Kubernetes default.
+startingDeadlineSeconds: null
+
+# -- Number of successful finished Jobs to retain.
+successfulJobsHistoryLimit: 3
+# -- Number of failed finished Jobs to retain.
+# Design Decision: 7 rather than the Kubernetes default of 1, so a week of
+# daily failures stays inspectable after the fact.
+failedJobsHistoryLimit: 7
+
+# -- CronJob object metadata
+cronJob:
+  # -- Additional annotations for the CronJob.
+  annotations: {}
+  # -- Additional labels for the CronJob.
+  labels: {}
+
+# -- Job template configuration, rendered under spec.jobTemplate
+job:
+  # -- Number of retries before a run is marked failed.
+  # Design Decision: 0 rather than the Kubernetes default of 6. A failed
+  # scheduled sweep usually means an upstream dependency is unreachable, which
+  # an immediate retry does not fix while it does consume a second helping of
+  # any shared rate budget. The next scheduled run is the retry.
+  backoffLimit: 0
+  # -- Maximum runtime in seconds for one run. Set to null to omit.
+  activeDeadlineSeconds: null
+  # -- Seconds to retain a finished Job. Set to null to omit and let the
+  # history limits above do the cleanup.
+  ttlSecondsAfterFinished: null
+  # -- Additional annotations for the generated Jobs.
+  annotations: {}
+  # -- Additional labels for the generated Jobs.
+  labels: {}
+
+# -- Container image configuration
+image:
+  # -- Image repository. Required when enabled is true.
+  repository: ""
+  # -- Image tag. Required when enabled unless image.digest is set.
+  tag: ""
+  # -- Image digest. Takes precedence over image.tag.
+  digest: ""
+
+# -- Image pull policy
+imagePullPolicy: IfNotPresent
+
+# -- Image pull secrets for private registries
+imagePullSecrets: []
+
+# -- Command that overrides the image ENTRYPOINT
+command: []
+# -- Arguments that override the image CMD
+args: []
+
+# -- Environment variables for the container.
+# A list, not a map, so valueFrom and fieldRef entries are expressible.
+env: []
+# -- ConfigMap and Secret environment sources
+envFrom: []
+
+# -- Container resource requests and limits
+resources: {}
+
+# -- Pod-level security context
+podSecurityContext: {}
+# -- Container-level security context
+securityContext: {}
+
+# -- Volume mounts for the container
+volumeMounts: []
+# -- Volumes for the pod
+volumes: []
+
+# -- Node selector constraints
+nodeSelector: {}
+# -- Tolerations for node taints
+tolerations: []
+# -- Affinity rules for pod scheduling
+affinity: {}
+
+# -- Pod restart policy. Kubernetes Jobs support Never and OnFailure.
+restartPolicy: Never
+
+# -- Service account configuration
+serviceAccount:
+  # -- Create a dedicated ServiceAccount when the CronJob is enabled.
+  create: false
+  # -- Existing ServiceAccount name. Defaults to "default" when create is false.
+  name: ""
+  # -- Annotations for the created ServiceAccount.
+  annotations: {}
+
+# -- Additional annotations for the run pod
+podAnnotations: {}
+# -- Additional labels for the run pod. These reach
+# spec.jobTemplate.spec.template.metadata.labels, which is what a
+# NetworkPolicy podSelector matches on.
+podLabels: {}
+
+# -- Override the chart name used in generated resource names
+nameOverride: ""
+# -- Override the fully qualified base resource name
+fullnameOverride: ""
+
+# -- Optional Helm test configuration. Enable it when a release should include a test pod.
+tests:
+  enabled: false
+  image:
+    repository: busybox
+    tag: "1.37"
+    pullPolicy: IfNotPresent

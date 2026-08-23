@@ -1,0 +1,11 @@
+# A digest and a tag together: the digest must win.
+enabled: true
+schedule: "@daily"
+
+image:
+  repository: busybox
+  tag: "1.37"
+  digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+command: ["sh", "-c"]
+args: ["echo 'digest CI test'"]

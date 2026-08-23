@@ -1,0 +1,2 @@
+# Safe umbrella default: no resources should be rendered.
+enabled: false

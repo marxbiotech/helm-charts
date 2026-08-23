@@ -30,10 +30,11 @@ helm test my-release                                             # 執行 chart 
 ## 新增 Chart 慣例
 
 1. 建立 `charts/<chart-name>/`，包含 `Chart.yaml`、`values.yaml`、`templates/`；Helm test 放在 `templates/tests/`（非頂層 `tests/`），以確保 `helm template --show-only` 可正確找到
-2. 以 `charts/sample-app/` 為 Deployment-type 參考範本；以 `charts/pre-hook-job/` 為 Job-type（hook）參考範本
+2. 以 `charts/sample-app/` 為 Deployment-type 參考範本；以 `charts/pre-hook-job/` 為 Job-type（hook）參考範本；以 `charts/standalone-job/` 為 one-off Job 參考範本；以 `charts/cronjob/` 為 CronJob-type 參考範本
 3. `Chart.yaml` 使用 `apiVersion: v2`，必須含 `maintainers`
 4. `_helpers.tpl` 命名慣例：`<chart-name>.name`、`<chart-name>.fullname`、`<chart-name>.labels`、`<chart-name>.selectorLabels`；若 chart 需要 ServiceAccount 則另加 `<chart-name>.serviceAccountName`
 5. Job-type chart 額外慣例：hash-based naming（`<chart-name>.jobName`）、`app.kubernetes.io/component` label、`required` 強制必填欄位
+6. **hash-based naming 只適用於 Job**。它是 Job `spec.template` immutable 的補償機制；CronJob 整份 spec 可變更，必須用穩定名稱（`charts/cronjob/` 的 `cronjob.cronJobName`），否則改 schedule/image 會變成 delete + recreate，丟掉 job history 與手動 `suspend` 狀態。CronJob 名稱上限是 **52** 字元（k8s 驗證 `DNS1035LabelMaxLength - 11`，因為每次執行叫 `<cronjob-name>-<unix-minutes>`），不是 63
 
 ## Vendored Chart 慣例
 

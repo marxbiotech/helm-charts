@@ -1,0 +1,122 @@
+# Exercise a broad representative configuration.
+enabled: true
+schedule: "0 3 * * *"
+timeZone: "Asia/Taipei"
+suspend: false
+concurrencyPolicy: Forbid
+startingDeadlineSeconds: 120
+successfulJobsHistoryLimit: 2
+failedJobsHistoryLimit: 7
+
+cronJob:
+  annotations:
+    example.com/audit-id: ci-full
+  labels:
+    app.example.com/team: platform
+
+job:
+  backoffLimit: 0
+  activeDeadlineSeconds: 900
+  ttlSecondsAfterFinished: 3600
+  annotations:
+    example.com/run-kind: scheduled
+  labels:
+    app.example.com/team: platform
+
+image:
+  repository: busybox
+  tag: "1.37"
+
+imagePullPolicy: IfNotPresent
+
+command: ["sh", "-c"]
+args: ["echo \"$MESSAGE\" > /tmp/result"]
+
+env:
+  - name: MESSAGE
+    value: full-ci-test
+  - name: POD_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+  - name: EXAMPLE_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: example-secret
+        key: token
+        optional: true
+
+envFrom:
+  - configMapRef:
+      name: example-config
+      optional: true
+  - secretRef:
+      name: example-secret
+      optional: true
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 16Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  fsGroup: 1000
+
+securityContext:
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+
+volumes:
+  - name: tmp
+    emptyDir: {}
+
+nodeSelector:
+  kubernetes.io/os: linux
+
+tolerations:
+  - key: dedicated
+    operator: Equal
+    value: jobs
+    effect: NoSchedule
+
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+            - key: kubernetes.io/os
+              operator: In
+              values:
+                - linux
+
+restartPolicy: Never
+
+serviceAccount:
+  create: true
+  name: cronjob-ci
+  annotations:
+    example.com/owner: platform
+
+podAnnotations:
+  prometheus.io/scrape: "false"
+
+# The label a NetworkPolicy podSelector matches on. It has to land on
+# spec.jobTemplate.spec.template.metadata.labels, not on the CronJob.
+podLabels:
+  app.example.com/purpose: chart-test
+
+nameOverride: task
+fullnameOverride: cronjob-task
+
+tests:
+  enabled: true

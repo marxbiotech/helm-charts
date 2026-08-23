@@ -1,0 +1,12 @@
+apiVersion: v2
+name: cronjob
+description: A generic Helm chart for scheduled Kubernetes CronJobs
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+maintainers:
+  - name: xin
+    email: aehrt55@aehrt55.net
+home: https://github.com/marxbiotech/helm-charts
+sources:
+  - https://github.com/marxbiotech/helm-charts

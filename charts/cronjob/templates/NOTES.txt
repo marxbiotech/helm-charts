@@ -1,0 +1,34 @@
+{{- if .Values.enabled }}
+cronjob "{{ include "cronjob.cronJobName" . }}" is enabled.
+
+  Schedule:     {{ .Values.schedule }}{{ if .Values.timeZone }} ({{ .Values.timeZone }}){{ else }} (cluster time zone, normally UTC){{ end }}
+  Suspended:    {{ .Values.suspend }}
+  Concurrency:  {{ .Values.concurrencyPolicy }}
+  Image:        {{ include "cronjob.image" . }}
+  Backoff:      {{ .Values.job.backoffLimit }}
+  History:      {{ .Values.successfulJobsHistoryLimit }} successful / {{ .Values.failedJobsHistoryLimit }} failed
+{{- if .Values.suspend }}
+
+The schedule is suspended and will not fire. Resume it with:
+  helm upgrade ... --set suspend=false
+or, out of band:
+  kubectl patch cronjob/{{ include "cronjob.cronJobName" . }} -n {{ .Release.Namespace }} -p '{"spec":{"suspend":false}}'
+{{- end }}
+
+Check the schedule:
+  kubectl get cronjob/{{ include "cronjob.cronJobName" . }} -n {{ .Release.Namespace }}
+
+List the runs it created:
+  kubectl get jobs -n {{ .Release.Namespace }} \
+    --selector app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=cronjob
+
+Follow the most recent run:
+  kubectl logs -n {{ .Release.Namespace }} -f \
+    --selector app.kubernetes.io/name={{ include "cronjob.name" . }},app.kubernetes.io/instance={{ .Release.Name }}
+
+Trigger an out-of-band run without waiting for the schedule:
+  kubectl create job --from=cronjob/{{ include "cronjob.cronJobName" . }} \
+    {{ include "cronjob.cronJobName" . }}-manual -n {{ .Release.Namespace }}
+{{- else }}
+cronjob is disabled (enabled=false). No resources were created.
+{{- end }}
