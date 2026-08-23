@@ -2,7 +2,7 @@ apiVersion: v2
 name: standalone-job
 description: A generic Helm chart for manual and operator-triggered one-off Kubernetes Jobs
 type: application
-version: 0.1.0
+version: 0.1.1
 appVersion: "1.0.0"
 maintainers:
   - name: xin
