@@ -64,14 +64,17 @@ CronJob names against DNS1035LabelMaxLength minus 11, because each run is named
 "<cronjob-name>-<unix-minutes>". A 63-character name passes helm template and
 is then rejected by the API server at apply time.
 
-Design Decision: over-length is an error here, not a truncation. The sibling
-job charts append an eight-character behavior hash, which is what lets them
-truncate safely: different long bases cannot collide after truncation. A stable
-name cannot carry that hash, so truncating here would let two releases whose
-names share a 52-character prefix collapse onto one CronJob, surfacing later as
-a confusing Helm ownership conflict rather than at the point of the mistake.
-An over-length name is therefore rejected outright, matching the policy the
-schema already applies to fullnameOverride.
+Design Decision: over-length is an error here, not a truncation. Only the
+sibling standalone-job chart appends an eight-character behavior hash, which is
+what lets it truncate safely: the hash covers the untruncated base, so different
+long bases cannot collide after truncation. A stable name cannot carry that
+hash, so truncating here would let two releases whose names share a
+52-character prefix collapse onto one CronJob, surfacing later as a confusing
+Helm ownership conflict rather than at the point of the mistake. An over-length
+name is therefore rejected outright. pre-hook-job already applies that same
+policy: its hash is caller-supplied and of arbitrary length, so it cannot
+truncate safely either and fails over 63 characters. Rejecting also matches the
+policy the schema already applies to fullnameOverride.
 */}}
 {{- define "cronjob.cronJobName" -}}
 {{- $name := include "cronjob.fullname" . }}

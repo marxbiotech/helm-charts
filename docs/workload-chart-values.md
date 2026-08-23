@@ -3,9 +3,10 @@
 ## 背景
 
 本 repo 的 workload chart（`standalone-job`、`pre-hook-job`、`cronjob`，以及
-Deployment-type 的 `sample-app`）在 values surface 的形狀上其實已有一致慣例，但這套慣例
-從未被寫下來。新增 `cronjob` chart 時因此是照猜測建起來的，事後被 review 要求重構了兩次
-——同一個根因出現兩遍。本文件把這套慣例記錄下來，讓下一個 workload chart 不必重來。
+Deployment-type 的 `sample-app`）在 values surface 的形狀上其實已有一致慣例——有些慣例涵蓋
+全部四個 chart，有些只適用於 Job-shaped 的前三個（見各條的適用範圍）——但這套慣例從未被寫
+下來。新增 `cronjob` chart 時因此是照猜測建起來的，事後被 review 要求重構了兩次——同一個
+根因出現兩遍。本文件把這套慣例記錄下來，讓下一個 workload chart 不必重來。
 
 本文件只談 **values surface 的形狀**與**與它直接相關的 template 慣例**，不重複
 CLAUDE.md「新增 Chart 慣例」已涵蓋的目錄結構、`Chart.yaml` 欄位與 `_helpers.tpl` 命名。
@@ -14,10 +15,15 @@ CLAUDE.md「新增 Chart 慣例」已涵蓋的目錄結構、`Chart.yaml` 欄位
 
 ### 1. Values 分組：主物件的 spec 欄位與 enablement gate 同組，pod-level 欄位攤平在頂層
 
+**適用範圍：Job-shaped chart（`standalone-job`、`pre-hook-job`、`cronjob`）。** Deployment-type
+的 `sample-app` 不適用——它沒有 `deployment:` 分組、沒有 enablement gate，`replicaCount` /
+`containerPort` / `service` 全部攤平在頂層。新增 Deployment chart 時請以 `sample-app` 為準
+（CLAUDE.md「新增 Chart 慣例」第 2 條指定它為 Deployment-type 參考範本），不要套用本條。
+
 以**資源 kind 命名的 map** 收納該物件自己的 spec 欄位，**enablement gate（`enabled`）
 也放在同一個 map 裡**；pod-level（PodSpec / container）的欄位則一律攤平在 values 頂層。
 
-現況（三個 chart 完全一致）：
+現況（三個 Job-shaped chart 完全一致）：
 
 | Chart | 主物件分組 | 內含 key |
 | --- | --- | --- |
@@ -119,10 +125,13 @@ CLAUDE.md「新增 Chart 慣例」第 5 條的 hash-based naming（`<chart-name>
 - **CronJob 需要穩定名稱**：CronJob 整份 spec 是可變更的。若名字帶 hash，改 schedule /
   image / env 都會變成 delete + recreate，丟掉 job history 與手動 `suspend` 狀態。因此
   `cronjob.cronJobName` 直接回傳 `cronjob.fullname`，不加任何後綴。
-- **失去 hash 也失去截斷安全性**：sibling chart 能安全 `trunc` 是因為後面永遠接著 hash——
-  不同的長 base 截斷後不會撞在一起。穩定名稱扛不動這個保證，所以 `cronjob` **不截斷、
-  直接報錯**。若容許截斷，兩個前 52 字元相同的 release 會塌成同一個 CronJob，事後只會以
-  難解的 Helm ownership conflict 浮現，而不是在犯錯的當下。
+- **失去 hash 也失去截斷安全性**：三個 chart 裡只有 `standalone-job` 能安全 `trunc`，因為
+  它的 8 字元 behavior hash 涵蓋**未截斷**的 base，不同的長 base 截斷後不會撞在一起。穩定
+  名稱扛不動這個保證，所以 `cronjob` **不截斷、直接報錯**。若容許截斷，兩個前 52 字元相同
+  的 release 會塌成同一個 CronJob，事後只會以難解的 Helm ownership conflict 浮現，而不是在
+  犯錯的當下。`pre-hook-job` 早就是同樣的政策：它的 hash 由呼叫端傳入、長度不定，也擔不起
+  截斷保證，超過 63 字元就 `fail`。換句話說，三個 chart 裡有兩個把過長名稱視為**錯誤**而非
+  截斷對象——`standalone-job` 的 `trunc` 才是那個需要 hash 撐腰的特例。
 
 CronJob 名稱上限是 **52** 字元，不是一般的 63：Kubernetes 以 `DNS1035LabelMaxLength - 11`
 驗證 CronJob 名稱，因為每次執行的 Job 叫 `<cronjob-name>-<unix-minutes>`。63 字元的名稱能
@@ -131,9 +140,9 @@ CronJob 名稱上限是 **52** 字元，不是一般的 63：Kubernetes 以 `DNS
 
 ## 使用時機
 
-- 新增任何 workload chart（Job / CronJob / Deployment）時——先照慣例 1 決定 values 形狀，
-  再開始寫 template。
-- 為既有 workload chart 新增主物件 spec 欄位時——判斷它該進分組還是留頂層。
+- 新增 Job-shaped workload chart（Job / CronJob）時——先照慣例 1 決定 values 形狀，再開始寫
+  template。Deployment-type chart 不適用慣例 1，請以 `sample-app` 為範本，見慣例 1 的適用範圍。
+- 為既有 Job-shaped workload chart 新增主物件 spec 欄位時——判斷它該進分組還是留頂層。
 - 動到 image 相關 key，或想把 image 字串抽成 helper 時——見慣例 2 與 3。
 - 為 workload chart 設計資源名稱時——見慣例 4，先確認該物件的 spec 是否 immutable。
 

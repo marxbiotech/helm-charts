@@ -25,11 +25,12 @@ with the intended published chart version before running or copying the example.
   template time rather than quietly adopting some chart author's idea of a good
   hour.
 - An explicit image tag or digest is required; there is no floating default
-  image. A digest takes precedence when both are set. Because the CronJob name
-  is stable, leaving a stale digest in place while bumping the tag makes
-  `helm upgrade` a silent no-op: the command succeeds, the manifest is
-  unchanged, and the schedule keeps running the old image. Pin one or the
-  other, and blank the tag when moving a release to digest pinning.
+  image. A digest takes precedence when both are set, and that precedence is
+  what makes leaving a stale digest in place while bumping the tag a silent
+  no-op: the digest wins in the image string, so the rendered manifest is
+  byte-identical, `helm upgrade` succeeds, and the schedule keeps running the
+  old image. Pin one or the other, and blank the tag when moving a release to
+  digest pinning.
 - `job.backoffLimit` defaults to `0`, not the Kubernetes default of `6`. See
   [Retries](#retries).
 
@@ -83,23 +84,23 @@ behind, not the week of failures the default of `7` was chosen to preserve.
 Keep the TTL longer than that window, or leave it unset and let the history
 limits do the cleanup.
 
-## Missed runs
+`cronJob.startingDeadlineSeconds` is unset by default, so a missed run has no
+deadline at all and the controller starts it whenever it next gets the chance.
+Once more than 100 starts have been missed since the last one, the controller
+stops backfilling them and schedules only the most recent slot, recording a
+warning on the CronJob:
 
-`cronJob.startingDeadlineSeconds` is unset by default, which means a missed run
-has no deadline at all — the controller starts it whenever it next gets the
-chance. That is also what exposes the schedule to the controller's
-missed-start-times rule: with no deadline it counts every start missed since
-the last one, and once more than 100 have accumulated it stops scheduling the
-CronJob permanently. `cronJob.concurrencyPolicy` defaults to `Forbid`, which
-makes those missed starts easier to accumulate, because one hung run blocks
-each of its successors in turn — on a `*/5 * * * *` schedule the hundred-slot
-threshold is a little over eight hours, well inside the window a release can
-sit while it is installed suspended and verified. The only signal is an event
-on the CronJob — `Cannot determine if job needs to be started: too many missed
-start times` — so the object still looks healthy in `kubectl get cronjob` while
-nothing runs. Setting a finite `cronJob.startingDeadlineSeconds` bounds the
-window the controller counts over and prevents this, at the cost of abandoning
-any run missed outside that window rather than starting it late.
+```
+Warning  TooManyMissedTimes  too many missed start times. Set or decrease .spec.startingDeadlineSeconds or check clock skew
+```
+
+Scheduling continues from that point on; nothing latches off. Suspending is not
+a way to accumulate missed starts either — while `cronJob.suspend` is `true` the
+controller returns before computing any schedule, and on resume it runs the most
+recent slot once. Set `cronJob.startingDeadlineSeconds` when a run that starts
+long after its slot is worse than no run at all: it bounds how late a missed run
+may start, and a run missed outside that window is dropped with a `MissSchedule`
+event rather than started late.
 
 ## Schedule
 
@@ -108,10 +109,11 @@ named macros (`@daily`, `@hourly`, and friends), and `@every <duration>` —
 `@every 90m` being the only way to express an interval that five-field cron
 cannot represent at all.
 
-The chart does not validate the syntax. Kubernetes parses the schedule with the
-standard cron parser, so a malformed schedule — a six-field Quartz-style one,
-say — is rejected by the API server at apply time rather than by
-`helm template`.
+The schema checks arity only: five whitespace-separated fields, a named macro,
+or `@every <duration>`. It never inspects what a field contains, so a six-field
+Quartz-style schedule is rejected by `helm template`, while a semantically
+impossible one such as `99 99 * * *` passes and is rejected by the API server at
+apply time, where the standard cron parser reads it.
 
 ## Time zone
 
@@ -121,8 +123,9 @@ manifest when empty, in which case the cluster's controller-manager time zone �
 normally UTC — applies.
 
 The field is honoured from 1.25 onward, where the feature gate is enabled by
-default. Where it is not honoured — an older cluster, or one with the gate
-turned off — the API server does not reject the field; it prunes
+default; the `CronJobTimeZone` gate was removed in 1.29, so from then on there
+is no gate to turn off. Where it is not honoured — an older cluster, or one with
+the gate turned off — the API server does not reject the field; it prunes
 `spec.timeZone` from the object. The release installs cleanly and the schedule
 then runs in the cluster time zone, so the `0 3 * * *` sweep below fires at
 03:00 UTC — 11:00 in Taipei — with no error, event, or warning to say so.

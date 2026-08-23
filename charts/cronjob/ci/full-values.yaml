@@ -18,7 +18,7 @@ job:
   activeDeadlineSeconds: 900
   # Deliberately longer than the history window this fixture configures, so
   # the TTL does not pre-empt the retained failed runs.
-  ttlSecondsAfterFinished: 604800
+  ttlSecondsAfterFinished: 691200
   annotations:
     example.com/run-kind: scheduled
   labels:

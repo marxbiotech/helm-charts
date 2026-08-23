@@ -1,12 +1,12 @@
-# A digest and a tag set together: the release renders successfully and the
-# container image comes out as a digest reference.
+# A digest-pinned release: it renders and installs, and the container image
+# comes out as a digest reference. Exercises the digest branch of the image
+# contract.
 cronJob:
   enabled: true
   schedule: "@daily"
 
 image:
   repository: busybox
-  tag: "1.37"
   digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 
 command: ["sh", "-c"]

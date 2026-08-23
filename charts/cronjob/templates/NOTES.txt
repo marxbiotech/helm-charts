@@ -21,12 +21,19 @@ Check the schedule:
 List the runs it created:
   kubectl get jobs -n {{ .Release.Namespace }} \
     --selector app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=cronjob
+{{- if .Values.cronJob.suspend }}
+
+No runs exist while the schedule is suspended, so there is nothing to follow
+yet. Resume the schedule (above) or trigger a run out of band (below) first.
+{{- else }}
 
 Follow the most recent run:
-  kubectl logs -n {{ .Release.Namespace }} -f --tail=-1 \
-    job/$(kubectl get jobs -n {{ .Release.Namespace }} \
-      --selector app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=cronjob \
-      --sort-by=.metadata.creationTimestamp -o name | tail -1 | cut -d/ -f2)
+  run=$(kubectl get jobs -n {{ .Release.Namespace }} \
+    --selector app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=cronjob \
+    --sort-by=.metadata.creationTimestamp -o name | tail -1 | cut -d/ -f2)
+  if [ -n "$run" ]; then kubectl logs -n {{ .Release.Namespace }} -f --tail=-1 job/"$run"; \
+    else echo "no runs yet"; fi
+{{- end }}
 
 Trigger an out-of-band run without waiting for the schedule:
   kubectl create job --from=cronjob/{{ include "cronjob.cronJobName" . }} \

@@ -21,23 +21,23 @@ cronJob:
   # @daily or @every 1h30m. Required when cronJob.enabled is true; there is no
   # default schedule, so a misconfigured release fails at template time instead
   # of silently firing.
-  # Design Decision: the syntax itself is deliberately not schema-validated. A
-  # JSON Schema regex cannot express cron semantics — the previous attempt
-  # rejected valid `@every <duration>` schedules while waving through nonsense
-  # such as `99 99 * * *`. Kubernetes validates the schedule itself with the
-  # standard cron parser, which accepts five-field syntax, the @-macros, and
-  # `@every <duration>`. The trade-off is that a malformed schedule now
-  # surfaces as an API server rejection at apply time, not at template time.
+  # Design Decision: the schema checks arity only — five whitespace-separated
+  # fields, a named @-macro, or `@every <duration>` — and never inspects what a
+  # field contains. Arity is a regular language and a regex expresses it
+  # exactly; cron semantics are not, and the previous attempt to encode them
+  # rejected valid `@every 1h30m` schedules. A semantic error such as
+  # `99 99 * * *` therefore passes the schema and is rejected by the API server
+  # at apply time, where the standard cron parser reads the schedule.
   schedule: ""
 
   # -- IANA time zone for the schedule (for example, Asia/Taipei).
   # Omitted from the manifest when empty, in which case the cluster's
   # kube-controller-manager time zone (normally UTC) applies.
-  # spec.timeZone is honoured from Kubernetes 1.25, where the feature gate is
-  # enabled by default, and is stable from 1.27. On an older cluster, or one
-  # where the gate has been turned off, the API server silently drops the field
-  # and the schedule runs in the cluster's time zone instead. The chart does not
-  # check this.
+  # spec.timeZone arrived in Kubernetes 1.24 as alpha and off by default, is
+  # honoured from 1.25, where the feature gate is enabled by default, and is
+  # stable from 1.27. On an older cluster, or one where the gate has been turned
+  # off, the API server silently drops the field and the schedule runs in the
+  # cluster's time zone instead. The chart does not check this.
   timeZone: ""
 
   # -- Suspend the schedule. The CronJob still exists and can be resumed
@@ -51,9 +51,9 @@ cronJob:
   # -- Seconds after the scheduled time within which a missed run may still
   # start. null omits the field, so a missed run has no deadline at all and may
   # start at any time after its scheduled time. With no deadline the controller
-  # counts every missed start since the last schedule, and stops scheduling the
-  # CronJob entirely once more than 100 have accumulated, surfacing only as an
-  # event.
+  # counts every missed start since the last schedule; once more than 100 have
+  # accumulated it stops backfilling them and schedules only the most recent
+  # slot, emitting a TooManyMissedTimes warning event.
   # Design Decision: null remains the default because a finite deadline abandons
   # runs missed outside its window, a per-workload policy left to the operator.
   startingDeadlineSeconds: null
@@ -105,13 +105,16 @@ image:
   # layered values work — a base values file sets tag, an environment overlay
   # pins digest — without the overlay having to blank the tag. This matches
   # standalone-job.
-  # Hazard this chart carries that standalone-job does not: the CronJob name is
-  # stable (no behavior hash), so a stale digest left alongside a bumped tag
-  # renders the same manifest as before. helm upgrade succeeds, the object is
-  # unchanged, and the schedule keeps running the old image indefinitely with
-  # nothing to show for it — where standalone-job would at least surface the
-  # problem as a Job that never reappears under a new name. Pin one or the
-  # other; blank the tag when moving a release to digest pinning.
+  # The hazard: the digest wins in the rendered image string, so a stale digest
+  # left alongside a bumped tag renders the same manifest as before. helm
+  # upgrade succeeds, the object is unchanged, and the schedule keeps running
+  # the old image indefinitely with nothing to show for it. standalone-job is
+  # equally silent by construction — its Job name hashes the image reference,
+  # but a digest short-circuits the tag before the hash is computed, so the tag
+  # is not an input to the name at all whenever a digest is set. A fix belongs
+  # in both charts together, the posture already taken for the label merge
+  # order. Pin one or the other; blank the tag when moving a release to digest
+  # pinning.
   digest: ""
 
 # -- Image pull policy

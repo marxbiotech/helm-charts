@@ -34,7 +34,6 @@ helm test my-release                                             # 執行 chart 
 3. `Chart.yaml` 使用 `apiVersion: v2`，必須含 `maintainers`
 4. `_helpers.tpl` 命名慣例：`<chart-name>.name`、`<chart-name>.fullname`、`<chart-name>.labels`、`<chart-name>.selectorLabels`；若 chart 需要 ServiceAccount 則另加 `<chart-name>.serviceAccountName`
 5. Job-type chart 額外慣例：hash-based naming（`<chart-name>.jobName`）、`app.kubernetes.io/component` label、`required` 強制必填欄位
-6. Workload chart 的 values 分組、image key 位置與 hash-based naming 適用範圍，詳見 [`docs/workload-chart-values.md`](docs/workload-chart-values.md)
 
 ## Workload Chart Values 慣例
 
