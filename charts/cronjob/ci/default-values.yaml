@@ -1,0 +1,14 @@
+# Minimal enabled configuration for chart-testing.
+cronJob:
+  enabled: true
+  schedule: "0 3 * * *"
+
+image:
+  repository: busybox
+  tag: "1.37"
+
+command: ["sh", "-c"]
+args: ["echo 'cronjob default CI test'"]
+
+tests:
+  enabled: true

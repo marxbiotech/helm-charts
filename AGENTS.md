@@ -30,10 +30,21 @@ helm test my-release                                             # 執行 chart 
 ## 新增 Chart 慣例
 
 1. 建立 `charts/<chart-name>/`，包含 `Chart.yaml`、`values.yaml`、`templates/`；Helm test 放在 `templates/tests/`（非頂層 `tests/`），以確保 `helm template --show-only` 可正確找到
-2. 以 `charts/sample-app/` 為 Deployment-type 參考範本；以 `charts/pre-hook-job/` 為 Job-type（hook）參考範本
+2. 以 `charts/sample-app/` 為 Deployment-type 參考範本；以 `charts/pre-hook-job/` 為 Job-type（hook）參考範本；以 `charts/standalone-job/` 為 one-off Job 參考範本；以 `charts/cronjob/` 為 CronJob-type 參考範本
 3. `Chart.yaml` 使用 `apiVersion: v2`，必須含 `maintainers`
 4. `_helpers.tpl` 命名慣例：`<chart-name>.name`、`<chart-name>.fullname`、`<chart-name>.labels`、`<chart-name>.selectorLabels`；若 chart 需要 ServiceAccount 則另加 `<chart-name>.serviceAccountName`
 5. Job-type chart 額外慣例：hash-based naming（`<chart-name>.jobName`）、`app.kubernetes.io/component` label、`required` 強制必填欄位
+
+## Workload Chart Values 慣例
+
+Job-shaped chart（Job/CronJob）的 values surface 形狀有既定慣例，詳見 [`docs/workload-chart-values.md`](docs/workload-chart-values.md)。**Deployment chart 不適用**——`charts/sample-app/` 是 Deployment 的參考範本（見上方慣例 2），它沒有 `deployment:` 分組也沒有 `enabled` gate，全部攤平。
+
+**核心原則**：Job-shaped chart 中，主物件的 spec 欄位與 `enabled` gate 同組（`job:`/`cronJob:`），pod-level 欄位攤平在頂層。
+
+**必須參考的情境：**
+1. 新增或修改 Job-shaped chart 的 values surface 時——先決定 key 該進分組還是留頂層，再寫 template。
+2. 動到 `imagePullPolicy`/`imagePullSecrets`，或想把 image 字串抽成 helper 時——沒有單一規則，且抽 helper 會讓 template guard 綁的變數變成 dead code。
+3. 為新 workload 物件設計資源名稱時——hash-based naming 只適用於 spec immutable 的 Job。
 
 ## Vendored Chart 慣例
 

@@ -155,14 +155,14 @@ dependencies:
   - name: standalone-job
     version: <chart-version>
     repository: oci://ghcr.io/marxbiotech/helm-charts
-    alias: ordersyncBackfill
+    alias: ordersync-backfill
 ```
 
 Keep it disabled in normal environment values:
 
 ```yaml
 # values.yaml
-ordersyncBackfill:
+ordersync-backfill:
   job:
     enabled: false
 ```
@@ -171,7 +171,7 @@ For a planned run, use a temporary values file or reviewed environment change:
 
 ```yaml
 # values-backfill.yaml
-ordersyncBackfill:
+ordersync-backfill:
   job:
     enabled: true
     runId: ordersync-backfill-dry-20260719

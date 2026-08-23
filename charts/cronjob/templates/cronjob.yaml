@@ -1,0 +1,151 @@
+{{- if .Values.cronJob.enabled }}
+{{- $image := .Values.image | default dict }}
+{{- $repository := required "image.repository is required when cronJob.enabled=true" $image.repository }}
+{{- if not (or $image.digest $image.tag) }}
+{{- fail "image.tag or image.digest is required when cronJob.enabled=true" }}
+{{- end }}
+{{- $schedule := required "cronJob.schedule is required when cronJob.enabled=true" .Values.cronJob.schedule }}
+{{/*
+KNOWN DEFECT, DELIBERATELY DEFERRED - label merge order.
+
+User-supplied `cronJob.labels`, `job.labels` and `podLabels` are appended
+into the same `labels:` mapping AFTER the chart's own labels emitted by
+`cronjob.labels` / `cronjob.selectorLabels`. A key collision therefore does
+not merge: it produces a duplicate YAML key in the rendered manifest, and
+because the user's entry comes last it wins. `helm template` exits 0 and
+`helm lint` stays clean, so nothing surfaces the collision.
+
+Three paths collide, and they break three different things. A `job.labels` key
+colliding with the chart's own `app.kubernetes.io/instance` or
+`app.kubernetes.io/component` breaks the `kubectl get jobs --selector` commands
+printed in NOTES.txt: the operator is told to list the runs and gets nothing
+back. A `cronJob.labels` collision does not touch those - it lands only on the
+CronJob's own metadata - but it breaks the `kubectl get cronjob --selector`
+command in the chart README the same way. A `podLabels` collision breaks
+NetworkPolicy `podSelector` binding instead, which is the chart's stated reason
+for existing. That one is the worst of the three: it fails at the pod's first
+outbound connection, hours after install, with nothing at admission time to
+hint at it.
+
+This is NOT fixed here on purpose. `charts/standalone-job/templates/job.yaml`
+emits its labels with the identical merge order, so the behaviour is a
+repo-wide convention rather than something this chart introduced. Fixing only
+one of the two charts would make them diverge silently; both must be changed
+together, in a single follow-up that switches the merge to a proper `merge`/
+`mustMerge` (or an explicit collision guard) in both places at once.
+*/}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "cronjob.cronJobName" . }}
+  labels:
+    {{- include "cronjob.labels" . | nindent 4 }}
+    {{- with .Values.cronJob.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.cronJob.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  schedule: {{ $schedule | quote }}
+  {{- with .Values.cronJob.timeZone }}
+  timeZone: {{ . | quote }}
+  {{- end }}
+  suspend: {{ .Values.cronJob.suspend }}
+  concurrencyPolicy: {{ .Values.cronJob.concurrencyPolicy }}
+  {{- if not (kindIs "invalid" .Values.cronJob.startingDeadlineSeconds) }}
+  startingDeadlineSeconds: {{ .Values.cronJob.startingDeadlineSeconds }}
+  {{- end }}
+  successfulJobsHistoryLimit: {{ .Values.cronJob.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.cronJob.failedJobsHistoryLimit }}
+  jobTemplate:
+    metadata:
+      labels:
+        {{- include "cronjob.labels" . | nindent 8 }}
+        {{- with .Values.job.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.job.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      backoffLimit: {{ .Values.job.backoffLimit }}
+      {{- if not (kindIs "invalid" .Values.job.activeDeadlineSeconds) }}
+      activeDeadlineSeconds: {{ .Values.job.activeDeadlineSeconds }}
+      {{- end }}
+      {{- if not (kindIs "invalid" .Values.job.ttlSecondsAfterFinished) }}
+      ttlSecondsAfterFinished: {{ .Values.job.ttlSecondsAfterFinished }}
+      {{- end }}
+      template:
+        metadata:
+          labels:
+            {{- include "cronjob.selectorLabels" . | nindent 12 }}
+            {{- with .Values.podLabels }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        spec:
+          serviceAccountName: {{ include "cronjob.serviceAccountName" . }}
+          restartPolicy: {{ .Values.restartPolicy }}
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          containers:
+            - name: {{ include "cronjob.name" . }}
+              image: "{{ $repository }}{{ if $image.digest }}@{{ $image.digest }}{{ else }}:{{ $image.tag }}{{ end }}"
+              imagePullPolicy: {{ .Values.imagePullPolicy }}
+              {{- with .Values.command }}
+              command:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              {{- with .Values.args }}
+              args:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              {{- with .Values.env }}
+              env:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              {{- with .Values.envFrom }}
+              envFrom:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              {{- with .Values.securityContext }}
+              securityContext:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              {{- with .Values.resources }}
+              resources:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              {{- with .Values.volumeMounts }}
+              volumeMounts:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+          {{- with .Values.volumes }}
+          volumes:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}
