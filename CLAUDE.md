@@ -37,12 +37,12 @@ helm test my-release                                             # 執行 chart 
 
 ## Workload Chart Values 慣例
 
-Workload chart（Job/CronJob/Deployment）的 values surface 形狀有既定慣例，詳見 [`docs/workload-chart-values.md`](docs/workload-chart-values.md)。
+Job-shaped chart（Job/CronJob）的 values surface 形狀有既定慣例，詳見 [`docs/workload-chart-values.md`](docs/workload-chart-values.md)。**Deployment chart 不適用**——`charts/sample-app/` 是 Deployment 的參考範本（見上方慣例 2），它沒有 `deployment:` 分組也沒有 `enabled` gate，全部攤平。
 
-**核心原則**：主物件的 spec 欄位與 `enabled` gate 同組（`job:`/`cronJob:`），pod-level 欄位攤平在頂層。
+**核心原則**：Job-shaped chart 中，主物件的 spec 欄位與 `enabled` gate 同組（`job:`/`cronJob:`），pod-level 欄位攤平在頂層。
 
 **必須參考的情境：**
-1. 新增或修改 workload chart 的 values surface 時——先決定 key 該進分組還是留頂層，再寫 template。
+1. 新增或修改 Job-shaped chart 的 values surface 時——先決定 key 該進分組還是留頂層，再寫 template。
 2. 動到 `imagePullPolicy`/`imagePullSecrets`，或想把 image 字串抽成 helper 時——沒有單一規則，且抽 helper 會讓 template guard 綁的變數變成 dead code。
 3. 為新 workload 物件設計資源名稱時——hash-based naming 只適用於 spec immutable 的 Job。
 

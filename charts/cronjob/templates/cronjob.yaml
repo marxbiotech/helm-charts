@@ -15,15 +15,17 @@ not merge: it produces a duplicate YAML key in the rendered manifest, and
 because the user's entry comes last it wins. `helm template` exits 0 and
 `helm lint` stays clean, so nothing surfaces the collision.
 
-Two consequences are live, and they differ in kind. A `job.labels` or
-`cronJob.labels` key colliding with the chart's own `app.kubernetes.io/instance`
-or `app.kubernetes.io/component` breaks the `kubectl get jobs --selector`
-commands printed in NOTES.txt: the operator is told to list the runs and gets
-nothing back. A `podLabels` key colliding breaks NetworkPolicy `podSelector`
-binding instead, which is the chart's stated reason for existing - see the
-pod-labels section of the chart README. That one is the worse of the two: it
-fails at the pod's first outbound connection, hours after install, with nothing
-at admission time to hint at it.
+Three paths collide, and they break three different things. A `job.labels` key
+colliding with the chart's own `app.kubernetes.io/instance` or
+`app.kubernetes.io/component` breaks the `kubectl get jobs --selector` commands
+printed in NOTES.txt: the operator is told to list the runs and gets nothing
+back. A `cronJob.labels` collision does not touch those - it lands only on the
+CronJob's own metadata - but it breaks the `kubectl get cronjob --selector`
+command in the chart README the same way. A `podLabels` collision breaks
+NetworkPolicy `podSelector` binding instead, which is the chart's stated reason
+for existing. That one is the worst of the three: it fails at the pod's first
+outbound connection, hours after install, with nothing at admission time to
+hint at it.
 
 This is NOT fixed here on purpose. `charts/standalone-job/templates/job.yaml`
 emits its labels with the identical merge order, so the behaviour is a

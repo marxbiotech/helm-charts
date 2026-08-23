@@ -23,17 +23,19 @@ List the runs it created:
     --selector app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=cronjob
 {{- if .Values.cronJob.suspend }}
 
-No runs exist while the schedule is suspended, so there is nothing to follow
-yet. Resume the schedule (above) or trigger a run out of band (below) first.
-{{- else }}
+The schedule is suspended, so no new runs will appear. A release suspended after
+running still has its retained history, and the command below follows the most
+recent of those.
+{{- end }}
 
 Follow the most recent run:
-  run=$(kubectl get jobs -n {{ .Release.Namespace }} \
+  jobs=$(kubectl get jobs -n {{ .Release.Namespace }} \
     --selector app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=cronjob \
-    --sort-by=.metadata.creationTimestamp -o name | tail -1 | cut -d/ -f2)
-  if [ -n "$run" ]; then kubectl logs -n {{ .Release.Namespace }} -f --tail=-1 job/"$run"; \
-    else echo "no runs yet"; fi
-{{- end }}
+    --sort-by=.metadata.creationTimestamp -o name)
+  if [ $? -ne 0 ]; then echo "could not list Jobs - check the namespace and your RBAC"; \
+    elif [ -z "$jobs" ]; then echo "no runs retained yet"; \
+    else kubectl logs -n {{ .Release.Namespace }} -f --tail=-1 \
+      "job/$(printf '%s\n' "$jobs" | tail -1 | cut -d/ -f2)"; fi
 
 Trigger an out-of-band run without waiting for the schedule:
   kubectl create job --from=cronjob/{{ include "cronjob.cronJobName" . }} \

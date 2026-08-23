@@ -1,7 +1,7 @@
 # Rollout posture: installed suspended, no time zone, optional fields omitted.
 cronJob:
   enabled: true
-  schedule: "*/5 * * * *"
+  schedule: "@every 90m"
   suspend: true
   timeZone: ""
   startingDeadlineSeconds: null

@@ -35,9 +35,11 @@ cronJob:
   # kube-controller-manager time zone (normally UTC) applies.
   # spec.timeZone arrived in Kubernetes 1.24 as alpha and off by default, is
   # honoured from 1.25, where the feature gate is enabled by default, and is
-  # stable from 1.27. On an older cluster, or one where the gate has been turned
-  # off, the API server silently drops the field and the schedule runs in the
-  # cluster's time zone instead. The chart does not check this.
+  # stable from 1.27, where the gate is locked on; it is gone entirely from 1.29.
+  # So a cluster that does not honour the field is 1.24, or one of 1.25/1.26 with
+  # the gate explicitly disabled. There the API server silently drops the field
+  # and the schedule runs in the cluster's time zone instead. The chart does not
+  # check this.
   timeZone: ""
 
   # -- Suspend the schedule. The CronJob still exists and can be resumed
@@ -50,10 +52,10 @@ cronJob:
 
   # -- Seconds after the scheduled time within which a missed run may still
   # start. null omits the field, so a missed run has no deadline at all and may
-  # start at any time after its scheduled time. With no deadline the controller
-  # counts every missed start since the last schedule; once more than 100 have
-  # accumulated it stops backfilling them and schedules only the most recent
-  # slot, emitting a TooManyMissedTimes warning event.
+  # start at any time after its scheduled time. Note that the controller never
+  # queues missed runs: at each sync it starts one Job for the most recent slot
+  # at or before now and advances past everything older, so an outage spanning
+  # several slots produces one catch-up run, not one per slot.
   # Design Decision: null remains the default because a finite deadline abandons
   # runs missed outside its window, a per-workload policy left to the operator.
   startingDeadlineSeconds: null

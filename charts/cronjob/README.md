@@ -86,21 +86,16 @@ limits do the cleanup.
 
 `cronJob.startingDeadlineSeconds` is unset by default, so a missed run has no
 deadline at all and the controller starts it whenever it next gets the chance.
-Once more than 100 starts have been missed since the last one, the controller
-stops backfilling them and schedules only the most recent slot, recording a
-warning on the CronJob:
+The controller does not queue missed runs: at each sync it starts one Job for
+the most recent slot at or before now and advances past everything older, so an
+outage spanning several slots produces one catch-up run, not one per slot. A
+nightly sweep down for three nights runs once on recovery; the two older nights
+are not processed.
 
-```
-Warning  TooManyMissedTimes  too many missed start times. Set or decrease .spec.startingDeadlineSeconds or check clock skew
-```
-
-Scheduling continues from that point on; nothing latches off. Suspending is not
-a way to accumulate missed starts either — while `cronJob.suspend` is `true` the
-controller returns before computing any schedule, and on resume it runs the most
-recent slot once. Set `cronJob.startingDeadlineSeconds` when a run that starts
-long after its slot is worse than no run at all: it bounds how late a missed run
-may start, and a run missed outside that window is dropped with a `MissSchedule`
-event rather than started late.
+Set `cronJob.startingDeadlineSeconds` when a run that starts long after its slot
+is worse than no run at all: it bounds how late a missed run may start, and a
+run missed outside that window is dropped with a `MissSchedule` event rather
+than started late.
 
 ## Schedule
 
@@ -109,11 +104,18 @@ named macros (`@daily`, `@hourly`, and friends), and `@every <duration>` —
 `@every 90m` being the only way to express an interval that five-field cron
 cannot represent at all.
 
-The schema checks arity only: five whitespace-separated fields, a named macro,
-or `@every <duration>`. It never inspects what a field contains, so a six-field
-Quartz-style schedule is rejected by `helm template`, while a semantically
-impossible one such as `99 99 * * *` passes and is rejected by the API server at
-apply time, where the standard cron parser reads it.
+The schema checks arity only: exactly five whitespace-separated fields with no
+leading or trailing space, a named macro, or `@every <duration>`. It never
+inspects what a field contains, so a six-field Quartz-style schedule is rejected
+by `helm template`, while a semantically impossible one such as `99 99 * * *`
+passes and is rejected by the API server at apply time.
+
+The pattern matches what a Kubernetes 1.29 or later API server accepts, not what
+the underlying cron parser accepts. It rejects a `TZ=`/`CRON_TZ=` prefix, which
+1.29 also rejects with "cannot use TZ or CRON_TZ in schedule, use timeZone field
+instead" — use `cronJob.timeZone`. On 1.24 to 1.28 that prefix is still accepted
+by the API server, so a release needing it there cannot use this chart's schema
+unvalidated.
 
 ## Time zone
 
@@ -123,9 +125,10 @@ manifest when empty, in which case the cluster's controller-manager time zone �
 normally UTC — applies.
 
 The field is honoured from 1.25 onward, where the feature gate is enabled by
-default; the `CronJobTimeZone` gate was removed in 1.29, so from then on there
-is no gate to turn off. Where it is not honoured — an older cluster, or one with
-the gate turned off — the API server does not reject the field; it prunes
+default. The `CronJobTimeZone` gate became unsettable in 1.27 (GA, locked on)
+and was removed entirely in 1.29, so a cluster with it turned off can only be
+1.24 to 1.26. Where the field is not honoured, the API server does not reject
+it; it prunes
 `spec.timeZone` from the object. The release installs cleanly and the schedule
 then runs in the cluster time zone, so the `0 3 * * *` sweep below fires at
 03:00 UTC — 11:00 in Taipei — with no error, event, or warning to say so.
@@ -242,13 +245,13 @@ dependencies:
   - name: cronjob
     version: <chart-version>
     repository: oci://ghcr.io/marxbiotech/helm-charts
-    alias: consignmentSweep
-    condition: consignmentSweep.cronJob.enabled
+    alias: consignment-sweep
+    condition: consignment-sweep.cronJob.enabled
 ```
 
 ```yaml
 # values.yaml
-consignmentSweep:
+consignment-sweep:
   cronJob:
     enabled: true
     schedule: "0 3 * * *"
@@ -293,7 +296,7 @@ serviceAccount:
 | `disabled-values.yaml` | nothing renders when `cronJob.enabled=false` |
 | `default-values.yaml` | minimal enabled release, `backoffLimit` default of `0` |
 | `full-values.yaml` | `podLabels` on the pod template, `env` with `valueFrom`, `envFrom` with both ref kinds, `cronJob.timeZone`, ServiceAccount creation, scheduling and security surface |
-| `digest-values.yaml` | a digest and a tag set together render successfully and yield a digest reference, `@daily` macro schedule |
+| `digest-values.yaml` | a digest-pinned release renders and installs and yields a digest reference, `@daily` macro schedule |
 | `suspended-values.yaml` | `cronJob.suspend: true`, and null optional fields omitted from the manifest |
 
 `ct install` proves the API server accepts each of these configurations. It does
