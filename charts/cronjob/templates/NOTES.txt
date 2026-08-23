@@ -1,16 +1,16 @@
-{{- if .Values.enabled }}
+{{- if .Values.cronJob.enabled }}
 cronjob "{{ include "cronjob.cronJobName" . }}" is enabled.
 
-  Schedule:     {{ .Values.schedule }}{{ if .Values.timeZone }} ({{ .Values.timeZone }}){{ else }} (cluster time zone, normally UTC){{ end }}
-  Suspended:    {{ .Values.suspend }}
-  Concurrency:  {{ .Values.concurrencyPolicy }}
-  Image:        {{ include "cronjob.image" . }}
+  Schedule:     {{ .Values.cronJob.schedule }}{{ if .Values.cronJob.timeZone }} ({{ .Values.cronJob.timeZone }}){{ else }} (cluster time zone, normally UTC){{ end }}
+  Suspended:    {{ .Values.cronJob.suspend }}
+  Concurrency:  {{ .Values.cronJob.concurrencyPolicy }}
+  Image:        {{ .Values.image.repository }}{{ if .Values.image.digest }}@{{ .Values.image.digest }}{{ else }}:{{ .Values.image.tag }}{{ end }}
   Backoff:      {{ .Values.job.backoffLimit }}
-  History:      {{ .Values.successfulJobsHistoryLimit }} successful / {{ .Values.failedJobsHistoryLimit }} failed
-{{- if .Values.suspend }}
+  History:      {{ .Values.cronJob.successfulJobsHistoryLimit }} successful / {{ .Values.cronJob.failedJobsHistoryLimit }} failed
+{{- if .Values.cronJob.suspend }}
 
 The schedule is suspended and will not fire. Resume it with:
-  helm upgrade ... --set suspend=false
+  helm upgrade ... --set cronJob.suspend=false
 or, out of band:
   kubectl patch cronjob/{{ include "cronjob.cronJobName" . }} -n {{ .Release.Namespace }} -p '{"spec":{"suspend":false}}'
 {{- end }}
@@ -23,12 +23,14 @@ List the runs it created:
     --selector app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=cronjob
 
 Follow the most recent run:
-  kubectl logs -n {{ .Release.Namespace }} -f \
-    --selector app.kubernetes.io/name={{ include "cronjob.name" . }},app.kubernetes.io/instance={{ .Release.Name }}
+  kubectl logs -n {{ .Release.Namespace }} -f --tail=-1 \
+    job/$(kubectl get jobs -n {{ .Release.Namespace }} \
+      --selector app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=cronjob \
+      --sort-by=.metadata.creationTimestamp -o name | tail -1 | cut -d/ -f2)
 
 Trigger an out-of-band run without waiting for the schedule:
   kubectl create job --from=cronjob/{{ include "cronjob.cronJobName" . }} \
     {{ include "cronjob.cronJobName" . }}-manual -n {{ .Release.Namespace }}
 {{- else }}
-cronjob is disabled (enabled=false). No resources were created.
+cronjob is disabled (cronJob.enabled=false). No resources were created.
 {{- end }}

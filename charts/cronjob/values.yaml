@@ -1,48 +1,70 @@
 # Default values for cronjob.
-# Designed for safe use as a subchart: no resources are rendered until enabled is true.
+# Designed for safe use as a subchart: no resources are rendered until
+# cronJob.enabled is true.
 
-# -- Render the CronJob. Kept false so an umbrella chart that declares this
-# chart as a dependency creates nothing until an environment opts in.
-# This is the top-level key Helm's dependency `condition` expects, so a parent
-# may also declare `condition: <alias>.enabled`.
-# Design Decision: `enabled` and `suspend` are separate. `enabled=false` means
-# the CronJob object does not exist; `suspend=true` means it exists but does
-# not fire. A rollout typically installs suspended, verifies the image carries
-# the subcommand, and then flips `suspend` to false.
-enabled: false
-
-# -- Cron schedule in standard five-field syntax, or an @-macro such as
-# @daily. Required when enabled is true; there is no default schedule, so a
-# misconfigured release fails at template time instead of silently firing.
-schedule: ""
-
-# -- IANA time zone for the schedule (for example, Asia/Taipei).
-# Omitted from the manifest when empty, in which case the cluster's
-# kube-controller-manager time zone (normally UTC) applies.
-# Requires Kubernetes 1.27 or later, where spec.timeZone is GA.
-timeZone: ""
-
-# -- Suspend the schedule. The CronJob still exists and can be resumed
-# without a name change.
-suspend: false
-
-# -- What to do when a run is still active at the next scheduled time.
-# Allow, Forbid, or Replace.
-concurrencyPolicy: Forbid
-
-# -- Seconds after the scheduled time within which a missed run may still
-# start. Set to null to omit and use the Kubernetes default.
-startingDeadlineSeconds: null
-
-# -- Number of successful finished Jobs to retain.
-successfulJobsHistoryLimit: 3
-# -- Number of failed finished Jobs to retain.
-# Design Decision: 7 rather than the Kubernetes default of 1, so a week of
-# daily failures stays inspectable after the fact.
-failedJobsHistoryLimit: 7
-
-# -- CronJob object metadata
+# -- CronJob configuration, rendered as the CronJob object and its spec
 cronJob:
+  # -- Render the CronJob. Kept false so an umbrella chart that declares this
+  # chart as a dependency creates nothing until an environment opts in.
+  # Grouped under `cronJob:` for parity with standalone-job's and
+  # pre-hook-job's `job.enabled`, which likewise carry the enablement gate
+  # alongside the object's own spec fields. Helm's dependency `condition`
+  # accepts a dotted path, so a parent declares
+  # `condition: <alias>.cronJob.enabled`.
+  # Design Decision: `enabled` and `suspend` are separate. `enabled=false` means
+  # the CronJob object does not exist; `suspend=true` means it exists but does
+  # not fire. A rollout typically installs suspended, verifies the image carries
+  # the subcommand, and then flips `suspend` to false.
+  enabled: false
+
+  # -- Cron schedule in standard five-field syntax, or an @-macro such as
+  # @daily or @every 1h30m. Required when cronJob.enabled is true; there is no
+  # default schedule, so a misconfigured release fails at template time instead
+  # of silently firing.
+  # Design Decision: the syntax itself is deliberately not schema-validated. A
+  # JSON Schema regex cannot express cron semantics — the previous attempt
+  # rejected valid `@every <duration>` schedules while waving through nonsense
+  # such as `99 99 * * *`. Kubernetes validates the schedule itself with the
+  # standard cron parser, which accepts five-field syntax, the @-macros, and
+  # `@every <duration>`. The trade-off is that a malformed schedule now
+  # surfaces as an API server rejection at apply time, not at template time.
+  schedule: ""
+
+  # -- IANA time zone for the schedule (for example, Asia/Taipei).
+  # Omitted from the manifest when empty, in which case the cluster's
+  # kube-controller-manager time zone (normally UTC) applies.
+  # spec.timeZone is honoured from Kubernetes 1.25, where the feature gate is
+  # enabled by default, and is stable from 1.27. On an older cluster, or one
+  # where the gate has been turned off, the API server silently drops the field
+  # and the schedule runs in the cluster's time zone instead. The chart does not
+  # check this.
+  timeZone: ""
+
+  # -- Suspend the schedule. The CronJob still exists and can be resumed
+  # without a name change.
+  suspend: false
+
+  # -- What to do when a run is still active at the next scheduled time.
+  # Allow, Forbid, or Replace.
+  concurrencyPolicy: Forbid
+
+  # -- Seconds after the scheduled time within which a missed run may still
+  # start. null omits the field, so a missed run has no deadline at all and may
+  # start at any time after its scheduled time. With no deadline the controller
+  # counts every missed start since the last schedule, and stops scheduling the
+  # CronJob entirely once more than 100 have accumulated, surfacing only as an
+  # event.
+  # Design Decision: null remains the default because a finite deadline abandons
+  # runs missed outside its window, a per-workload policy left to the operator.
+  startingDeadlineSeconds: null
+
+  # -- Number of successful finished Jobs to retain.
+  successfulJobsHistoryLimit: 3
+  # -- Number of failed finished Jobs to retain.
+  # Design Decision: 7 rather than the Kubernetes default of 1, so a week of
+  # daily failures stays inspectable after the fact.
+  failedJobsHistoryLimit: 7
+
   # -- Additional annotations for the CronJob.
   annotations: {}
   # -- Additional labels for the CronJob.
@@ -60,6 +82,12 @@ job:
   activeDeadlineSeconds: null
   # -- Seconds to retain a finished Job. Set to null to omit and let the
   # history limits above do the cleanup.
+  # This TTL and cronJob.successfulJobsHistoryLimit /
+  # cronJob.failedJobsHistoryLimit both delete finished Jobs, and whichever
+  # fires first wins. A TTL shorter than the period the history limits span
+  # therefore overrides them silently, destroying the retained runs the limits
+  # were set to keep. Keep the TTL longer than that window, or leave it null
+  # and let the history limits do the cleanup alone.
   ttlSecondsAfterFinished: null
   # -- Additional annotations for the generated Jobs.
   annotations: {}
@@ -68,17 +96,38 @@ job:
 
 # -- Container image configuration
 image:
-  # -- Image repository. Required when enabled is true.
+  # -- Image repository. Required when cronJob.enabled is true.
   repository: ""
-  # -- Image tag. Required when enabled unless image.digest is set.
+  # -- Image tag. Required when cronJob.enabled unless image.digest is set.
   tag: ""
   # -- Image digest. Takes precedence over image.tag.
+  # Design Decision: tag and digest are deliberately allowed together, so that
+  # layered values work — a base values file sets tag, an environment overlay
+  # pins digest — without the overlay having to blank the tag. This matches
+  # standalone-job.
+  # Hazard this chart carries that standalone-job does not: the CronJob name is
+  # stable (no behavior hash), so a stale digest left alongside a bumped tag
+  # renders the same manifest as before. helm upgrade succeeds, the object is
+  # unchanged, and the schedule keeps running the old image indefinitely with
+  # nothing to show for it — where standalone-job would at least surface the
+  # problem as a Job that never reappears under a new name. Pin one or the
+  # other; blank the tag when moving a release to digest pinning.
   digest: ""
 
 # -- Image pull policy
+# Design Decision: Kept top-level for parity with standalone-job, the sibling
+# one-off-Job chart, so porting a values file between the two does not also
+# require rewriting this key on top of the enablement key that already differs.
+# Not a backward-compatibility argument: this chart is unpublished and has no
+# contract to preserve. The cost is real — sample-app, pre-hook-job and k8s-ssh
+# all nest this as image.pullPolicy, as does this chart's own
+# tests.image.pullPolicy, so the flat spelling is a deliberate minority.
 imagePullPolicy: IfNotPresent
 
 # -- Image pull secrets for private registries
+# Design Decision: Top-level here is the repo-wide convention, not the minority
+# spelling above — sample-app, pre-hook-job and standalone-job all keep
+# imagePullSecrets flat.
 imagePullSecrets: []
 
 # -- Command that overrides the image ENTRYPOINT

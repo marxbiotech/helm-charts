@@ -3,68 +3,75 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "enabled",
-    "schedule",
-    "suspend",
-    "concurrencyPolicy",
-    "successfulJobsHistoryLimit",
-    "failedJobsHistoryLimit",
     "cronJob",
     "job",
     "imagePullPolicy",
     "restartPolicy"
   ],
   "properties": {
-    "enabled": {
-      "type": "boolean"
-    },
-    "schedule": {
-      "type": "string",
-      "pattern": "^$|^@(annually|yearly|monthly|weekly|daily|midnight|hourly)$|^\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+$"
-    },
-    "timeZone": {
-      "type": "string",
-      "pattern": "^$|^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+)*$"
-    },
-    "suspend": {
-      "type": "boolean"
-    },
-    "concurrencyPolicy": {
-      "type": "string",
-      "enum": [
-        "Allow",
-        "Forbid",
-        "Replace"
-      ]
-    },
-    "startingDeadlineSeconds": {
-      "oneOf": [
-        {
-          "type": "integer",
-          "minimum": 0
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "successfulJobsHistoryLimit": {
-      "type": "integer",
-      "minimum": 0
-    },
-    "failedJobsHistoryLimit": {
-      "type": "integer",
-      "minimum": 0
-    },
     "cronJob": {
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "enabled",
+        "schedule",
+        "suspend",
+        "concurrencyPolicy",
+        "successfulJobsHistoryLimit",
+        "failedJobsHistoryLimit"
+      ],
       "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "schedule": {
+          "type": "string"
+        },
+        "timeZone": {
+          "type": "string",
+          "pattern": "^$|^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+)*$"
+        },
+        "suspend": {
+          "type": "boolean"
+        },
+        "concurrencyPolicy": {
+          "type": "string",
+          "enum": [
+            "Allow",
+            "Forbid",
+            "Replace"
+          ]
+        },
+        "startingDeadlineSeconds": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "successfulJobsHistoryLimit": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failedJobsHistoryLimit": {
+          "type": "integer",
+          "minimum": 0
+        },
         "annotations": {
-          "type": "object"
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "labels": {
-          "type": "object"
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       }
     },
@@ -102,10 +109,16 @@
           ]
         },
         "annotations": {
-          "type": "object"
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "labels": {
-          "type": "object"
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       }
     },
@@ -189,13 +202,22 @@
       }
     },
     "podAnnotations": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
     },
     "podLabels": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
     },
     "nodeSelector": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
     },
     "tolerations": {
       "type": "array",
@@ -271,22 +293,36 @@
     {
       "if": {
         "required": [
-          "enabled"
+          "cronJob"
         ],
         "properties": {
-          "enabled": {
-            "const": true
+          "cronJob": {
+            "required": [
+              "enabled"
+            ],
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            }
           }
         }
       },
       "then": {
         "required": [
-          "schedule",
+          "cronJob",
           "image"
         ],
         "properties": {
-          "schedule": {
-            "minLength": 1
+          "cronJob": {
+            "required": [
+              "schedule"
+            ],
+            "properties": {
+              "schedule": {
+                "minLength": 1
+              }
+            }
           },
           "image": {
             "required": [

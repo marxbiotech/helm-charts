@@ -1,9 +1,10 @@
 # Rollout posture: installed suspended, no time zone, optional fields omitted.
-enabled: true
-schedule: "*/5 * * * *"
-suspend: true
-timeZone: ""
-startingDeadlineSeconds: null
+cronJob:
+  enabled: true
+  schedule: "*/5 * * * *"
+  suspend: true
+  timeZone: ""
+  startingDeadlineSeconds: null
 
 job:
   backoffLimit: 0

@@ -1,14 +1,13 @@
 # Exercise a broad representative configuration.
-enabled: true
-schedule: "0 3 * * *"
-timeZone: "Asia/Taipei"
-suspend: false
-concurrencyPolicy: Forbid
-startingDeadlineSeconds: 120
-successfulJobsHistoryLimit: 2
-failedJobsHistoryLimit: 7
-
 cronJob:
+  enabled: true
+  schedule: "0 3 * * *"
+  timeZone: "Asia/Taipei"
+  suspend: false
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 120
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 7
   annotations:
     example.com/audit-id: ci-full
   labels:
@@ -17,7 +16,9 @@ cronJob:
 job:
   backoffLimit: 0
   activeDeadlineSeconds: 900
-  ttlSecondsAfterFinished: 3600
+  # Deliberately longer than the history window this fixture configures, so
+  # the TTL does not pre-empt the retained failed runs.
+  ttlSecondsAfterFinished: 604800
   annotations:
     example.com/run-kind: scheduled
   labels:

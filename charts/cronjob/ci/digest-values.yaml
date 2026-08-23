@@ -1,6 +1,8 @@
-# A digest and a tag together: the digest must win.
-enabled: true
-schedule: "@daily"
+# A digest and a tag set together: the release renders successfully and the
+# container image comes out as a digest reference.
+cronJob:
+  enabled: true
+  schedule: "@daily"
 
 image:
   repository: busybox

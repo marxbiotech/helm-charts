@@ -3,11 +3,14 @@ Design Decision: This Helm test intentionally verifies test-hook plumbing only.
 A scheduled CronJob produces no pod at install time, so observing a real run
 would mean either waiting for the schedule or granting the test pod Kubernetes
 API RBAC to create a Job from the CronJob and read its result. Both are
-deferred. Field-level rendering (pod labels, digest selection, timeZone) is
-covered by the ci/ values files that ct install renders and applies, which is
-where the API server rejects a malformed spec.
+deferred. Note that ct install over the ci/ values files demonstrates admission
+validity only, not that any field rendered into the right place. Pod labels in
+particular have no validation surface that could catch a misplacement: nothing
+requires a CronJob's pod-template labels to match a selector, so a label moved
+out of the pod template is still accepted. Placement is checked by hand with
+helm template --show-only.
 */}}
-{{- if and .Values.enabled .Values.tests.enabled }}
+{{- if and .Values.cronJob.enabled .Values.tests.enabled }}
 apiVersion: v1
 kind: Pod
 metadata:

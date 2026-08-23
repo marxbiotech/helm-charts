@@ -1,10 +1,32 @@
-{{- if .Values.enabled }}
+{{- if .Values.cronJob.enabled }}
 {{- $image := .Values.image | default dict }}
-{{- $repository := required "image.repository is required when enabled=true" $image.repository }}
+{{- $repository := required "image.repository is required when cronJob.enabled=true" $image.repository }}
 {{- if not (or $image.digest $image.tag) }}
-{{- fail "image.tag or image.digest is required when enabled=true" }}
+{{- fail "image.tag or image.digest is required when cronJob.enabled=true" }}
 {{- end }}
-{{- $schedule := required "schedule is required when enabled=true" .Values.schedule }}
+{{- $schedule := required "cronJob.schedule is required when cronJob.enabled=true" .Values.cronJob.schedule }}
+{{/*
+KNOWN DEFECT, DELIBERATELY DEFERRED - label merge order.
+
+User-supplied `cronJob.labels`, `job.labels` and `podLabels` are appended
+into the same `labels:` mapping AFTER the chart's own labels emitted by
+`cronjob.labels` / `cronjob.selectorLabels`. A key collision therefore does
+not merge: it produces a duplicate YAML key in the rendered manifest, and
+because the user's entry comes last it wins. `helm template` exits 0 and
+`helm lint` stays clean, so nothing surfaces the collision.
+
+The consequence is that a user setting e.g. `podLabels.app\.kubernetes\.io/name`
+silently overwrites the chart's own `app.kubernetes.io/*` identity labels. The
+`kubectl logs --selector` command printed in NOTES.txt is built from those
+labels, so it stops matching the pods it is meant to select.
+
+This is NOT fixed here on purpose. `charts/standalone-job/templates/job.yaml`
+emits its labels with the identical merge order, so the behaviour is a
+repo-wide convention rather than something this chart introduced. Fixing only
+one of the two charts would make them diverge silently; both must be changed
+together, in a single follow-up that switches the merge to a proper `merge`/
+`mustMerge` (or an explicit collision guard) in both places at once.
+*/}}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -20,16 +42,16 @@ metadata:
   {{- end }}
 spec:
   schedule: {{ $schedule | quote }}
-  {{- with .Values.timeZone }}
+  {{- with .Values.cronJob.timeZone }}
   timeZone: {{ . | quote }}
   {{- end }}
-  suspend: {{ .Values.suspend }}
-  concurrencyPolicy: {{ .Values.concurrencyPolicy }}
-  {{- if not (kindIs "invalid" .Values.startingDeadlineSeconds) }}
-  startingDeadlineSeconds: {{ .Values.startingDeadlineSeconds }}
+  suspend: {{ .Values.cronJob.suspend }}
+  concurrencyPolicy: {{ .Values.cronJob.concurrencyPolicy }}
+  {{- if not (kindIs "invalid" .Values.cronJob.startingDeadlineSeconds) }}
+  startingDeadlineSeconds: {{ .Values.cronJob.startingDeadlineSeconds }}
   {{- end }}
-  successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
-  failedJobsHistoryLimit: {{ .Values.failedJobsHistoryLimit }}
+  successfulJobsHistoryLimit: {{ .Values.cronJob.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.cronJob.failedJobsHistoryLimit }}
   jobTemplate:
     metadata:
       labels:
@@ -73,7 +95,7 @@ spec:
           {{- end }}
           containers:
             - name: {{ include "cronjob.name" . }}
-              image: "{{ include "cronjob.image" . }}"
+              image: "{{ $repository }}{{ if $image.digest }}@{{ $image.digest }}{{ else }}:{{ $image.tag }}{{ end }}"
               imagePullPolicy: {{ .Values.imagePullPolicy }}
               {{- with .Values.command }}
               command:

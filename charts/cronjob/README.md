@@ -2,7 +2,7 @@
 
 A reusable Helm chart for scheduled Kubernetes workloads. The chart renders a
 normal `batch/v1` CronJob and is safe to include in an umbrella chart because
-`enabled` defaults to `false`.
+`cronJob.enabled` defaults to `false`.
 
 It is the scheduled counterpart to [`standalone-job`](../standalone-job): same
 image, environment, security, and scheduling surface, with a schedule and the
@@ -13,17 +13,23 @@ with the intended published chart version before running or copying the example.
 
 ## Safety model
 
-- No resources are rendered until `enabled=true`. The key is top-level, so a
-  parent chart may also gate the dependency with `condition: <alias>.enabled`.
-- `enabled` and `suspend` are different switches, and both are useful:
-  - `enabled=false` — the CronJob object does not exist.
-  - `suspend=true` — it exists, holds its name and history, and does not fire.
-    This is the rollout posture: install suspended, confirm the image really
-    carries the subcommand, then flip `suspend` to `false`.
-- `schedule` has no default. An enabled release without one fails at template
-  time rather than quietly adopting some chart author's idea of a good hour.
+- No resources are rendered until `cronJob.enabled=true`. A parent chart may
+  also gate the dependency with `condition: <alias>.cronJob.enabled`.
+- `cronJob.enabled` and `cronJob.suspend` are different switches, and both are
+  useful:
+  - `cronJob.enabled=false` — the CronJob object does not exist.
+  - `cronJob.suspend=true` — it exists, holds its name and history, and does
+    not fire. This is the rollout posture: install suspended, confirm the image
+    really carries the subcommand, then flip `cronJob.suspend` to `false`.
+- `cronJob.schedule` has no default. An enabled release without one fails at
+  template time rather than quietly adopting some chart author's idea of a good
+  hour.
 - An explicit image tag or digest is required; there is no floating default
-  image. A digest takes precedence when both are set.
+  image. A digest takes precedence when both are set. Because the CronJob name
+  is stable, leaving a stale digest in place while bumping the tag makes
+  `helm upgrade` a silent no-op: the command succeeds, the manifest is
+  unchanged, and the schedule keeps running the old image. Pin one or the
+  other, and blank the tag when moving a release to digest pinning.
 - `job.backoffLimit` defaults to `0`, not the Kubernetes default of `6`. See
   [Retries](#retries).
 
@@ -38,11 +44,21 @@ what lets a schedule, image, or environment change be an in-place update
 instead of a delete-and-recreate that discards job history and any manual
 `kubectl patch ... suspend`.
 
-The name is truncated to **52** characters, not the usual 63. Kubernetes
+The name is capped at **52** characters, not the usual 63. Kubernetes
 validates CronJob names against `DNS1035LabelMaxLength - 11`, because each run
 is named `<cronjob-name>-<unix-minutes>`. A 63-character name renders fine and
 is then rejected by the API server at apply time, so `fullnameOverride` is
 capped at 52 in the schema.
+
+Dropping the behavior hash gave something up. `standalone-job` truncates its
+name safely because the hash it appends guarantees that different long bases
+cannot collide after truncation; a stable name has no such guarantee, and two
+releases sharing a 52-character prefix would silently become one CronJob. The
+chart therefore refuses an over-length name at template time instead of
+truncating it. A release name must leave the generated name at or under 52
+characters — `<release>-cronjob`, or the release name alone when it already
+contains `cronjob` — and `fullnameOverride` is how to take control when it does
+not.
 
 ## Retries
 
@@ -56,29 +72,75 @@ scheduled run is the retry. Raise it deliberately for workloads where a retry
 really does help.
 
 Set `job.activeDeadlineSeconds` for anything that must not overrun into the
-next scheduled slot. `concurrencyPolicy` defaults to `Forbid`, so a run that
-overruns anyway suppresses the next one rather than doubling up.
+next scheduled slot. `cronJob.concurrencyPolicy` defaults to `Forbid`, so a run
+that overruns anyway suppresses the next one rather than doubling up.
+
+Be careful setting `job.ttlSecondsAfterFinished` for tidiness. The TTL and the
+history limits both delete finished Jobs, and whichever fires first wins, so a
+TTL shorter than the period `cronJob.failedJobsHistoryLimit` spans quietly
+overrides it — a one-hour TTL on a daily schedule leaves at most one failure
+behind, not the week of failures the default of `7` was chosen to preserve.
+Keep the TTL longer than that window, or leave it unset and let the history
+limits do the cleanup.
+
+## Missed runs
+
+`cronJob.startingDeadlineSeconds` is unset by default, which means a missed run
+has no deadline at all — the controller starts it whenever it next gets the
+chance. That is also what exposes the schedule to the controller's
+missed-start-times rule: with no deadline it counts every start missed since
+the last one, and once more than 100 have accumulated it stops scheduling the
+CronJob permanently. `cronJob.concurrencyPolicy` defaults to `Forbid`, which
+makes those missed starts easier to accumulate, because one hung run blocks
+each of its successors in turn — on a `*/5 * * * *` schedule the hundred-slot
+threshold is a little over eight hours, well inside the window a release can
+sit while it is installed suspended and verified. The only signal is an event
+on the CronJob — `Cannot determine if job needs to be started: too many missed
+start times` — so the object still looks healthy in `kubectl get cronjob` while
+nothing runs. Setting a finite `cronJob.startingDeadlineSeconds` bounds the
+window the controller counts over and prevents this, at the cost of abandoning
+any run missed outside that window rather than starting it late.
+
+## Schedule
+
+`cronJob.schedule` accepts standard five-field cron syntax (`0 3 * * *`), the
+named macros (`@daily`, `@hourly`, and friends), and `@every <duration>` —
+`@every 90m` being the only way to express an interval that five-field cron
+cannot represent at all.
+
+The chart does not validate the syntax. Kubernetes parses the schedule with the
+standard cron parser, so a malformed schedule — a six-field Quartz-style one,
+say — is rejected by the API server at apply time rather than by
+`helm template`.
 
 ## Time zone
 
-`timeZone` is the native Kubernetes `spec.timeZone` field (GA since 1.27) and
-takes an IANA name such as `Asia/Taipei`. It is omitted from the manifest when
-empty, in which case the cluster's controller-manager time zone — normally UTC
-— applies.
+`cronJob.timeZone` is the native Kubernetes `spec.timeZone` field (GA since
+1.27) and takes an IANA name such as `Asia/Taipei`. It is omitted from the
+manifest when empty, in which case the cluster's controller-manager time zone —
+normally UTC — applies.
 
-Note the capital `Z`. `timezone` is the Argo CronWorkflow spelling and is
-rejected by this chart's schema.
+The field is honoured from 1.25 onward, where the feature gate is enabled by
+default. Where it is not honoured — an older cluster, or one with the gate
+turned off — the API server does not reject the field; it prunes
+`spec.timeZone` from the object. The release installs cleanly and the schedule
+then runs in the cluster time zone, so the `0 3 * * *` sweep below fires at
+03:00 UTC — 11:00 in Taipei — with no error, event, or warning to say so.
+
+Note the capital `Z`. `cronJob.timezone` is the Argo CronWorkflow spelling and
+is rejected by this chart's schema.
 
 ## Daily sweep
 
 Create `values-sweep.yaml`:
 
 ```yaml
-enabled: true
-schedule: "0 3 * * *"
-timeZone: "Asia/Taipei"
-suspend: true                # flip to false once the image is verified
-concurrencyPolicy: Forbid
+cronJob:
+  enabled: true
+  schedule: "0 3 * * *"
+  timeZone: "Asia/Taipei"
+  suspend: true              # flip to false once the image is verified
+  concurrencyPolicy: Forbid
 
 job:
   backoffLimit: 0
@@ -126,7 +188,7 @@ kubectl create job --from=cronjob/ordersync-sweep-cronjob \
 kubectl logs -f job/ordersync-sweep-manual -n ordersync
 ```
 
-Then set `suspend: false` and upgrade.
+Then set `cronJob.suspend: false` and upgrade.
 
 ## Pod labels and NetworkPolicy
 
@@ -178,16 +240,17 @@ dependencies:
     version: <chart-version>
     repository: oci://ghcr.io/marxbiotech/helm-charts
     alias: consignmentSweep
-    condition: consignmentSweep.enabled
+    condition: consignmentSweep.cronJob.enabled
 ```
 
 ```yaml
 # values.yaml
 consignmentSweep:
-  enabled: true
-  schedule: "0 3 * * *"
-  timeZone: "Asia/Taipei"
-  suspend: false
+  cronJob:
+    enabled: true
+    schedule: "0 3 * * *"
+    timeZone: "Asia/Taipei"
+    suspend: false
   image:
     repository: ghcr.io/example/ordersync
     digest: sha256:...
@@ -222,16 +285,25 @@ serviceAccount:
 
 `ct install` renders and applies every file under `ci/`:
 
-| File | Covers |
+| File | Exercises |
 |---|---|
-| `disabled-values.yaml` | nothing renders when `enabled=false` |
+| `disabled-values.yaml` | nothing renders when `cronJob.enabled=false` |
 | `default-values.yaml` | minimal enabled release, `backoffLimit` default of `0` |
-| `full-values.yaml` | `podLabels` on the pod template, `env` with `valueFrom`, `envFrom` with both ref kinds, `timeZone`, ServiceAccount creation, scheduling and security surface |
-| `digest-values.yaml` | digest wins when a tag is also set, `@daily` macro schedule |
-| `suspended-values.yaml` | `suspend: true`, and null optional fields omitted from the manifest |
+| `full-values.yaml` | `podLabels` on the pod template, `env` with `valueFrom`, `envFrom` with both ref kinds, `cronJob.timeZone`, ServiceAccount creation, scheduling and security surface |
+| `digest-values.yaml` | a digest and a tag set together render successfully and yield a digest reference, `@daily` macro schedule |
+| `suspended-values.yaml` | `cronJob.suspend: true`, and null optional fields omitted from the manifest |
+
+`ct install` proves the API server accepts each of these configurations. It does
+not prove that any field landed where it belongs. A CronJob's pod template has
+no selector that must match its labels — the Job controller generates its own —
+so a pod label moved up to the CronJob's own `metadata.labels` renders, lints,
+and is admitted without complaint. A Deployment gets that check for free because
+`spec.selector.matchLabels` must match `spec.template.metadata.labels`; there is
+no equivalent surface here. Field placement is verified by hand, with the
+`helm template --show-only ... | yq` command under
+[Pod labels and NetworkPolicy](#pod-labels-and-networkpolicy).
 
 The Helm test pod verifies test-hook plumbing only. A scheduled CronJob creates
 no pod at install time, so observing a real run would mean waiting for the
 schedule or granting the test pod RBAC to create a Job from the CronJob — both
-are deferred. Until then, the API server's rejection of a malformed spec during
-`ct install` is what backs the `ci/` matrix above.
+are deferred.
