@@ -1,0 +1,12 @@
+apiVersion: v2
+name: post-hook-job
+description: A generic Helm chart for running post-install/post-upgrade hook Jobs — work that needs the release's own services deployed first (e.g. reconciling an API's state from configuration)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+maintainers:
+  - name: xin
+    email: aehrt55@aehrt55.net
+home: https://github.com/marxbiotech/helm-charts
+sources:
+  - https://github.com/marxbiotech/helm-charts
