@@ -1,0 +1,85 @@
+# Default values for post-hook-job.
+# Designed as a subchart — parent chart enables and configures via alias. The Job
+# runs as a Helm post-install/post-upgrade hook: the release's resources exist
+# but may still be starting, so the Job itself must wait for what it needs.
+
+# -- Job configuration
+job:
+  # -- Enable the hook Job (default false; parent chart should set true)
+  enabled: false
+  # -- Unique hash for this Job's content — ensures a new Job is created on each change (REQUIRED when enabled)
+  hash: ""
+  # -- Helm hook weight — controls execution order among multiple post hooks (lower runs first)
+  hookWeight: "1"
+  # -- Helm hook delete policy — "before-hook-creation" preserves both failed and succeeded Jobs after a release; old hook resources are cleaned up before the next hook runs (note: ttlSecondsAfterFinished may delete finished Jobs earlier)
+  hookDeletePolicy: "before-hook-creation"
+  # -- Job backoff limit — number of retries before marking as failed
+  backoffLimit: 3
+  # -- TTL seconds after Job finishes — auto-cleanup finished Jobs (both succeeded and failed); set to null to omit
+  ttlSecondsAfterFinished: 86400
+  # -- Maximum duration in seconds for the Job to run before being terminated (set to null to omit)
+  activeDeadlineSeconds: null
+  # -- Additional annotations to add to the Job
+  annotations: {}
+  # -- Additional labels to add to the Job
+  labels: {}
+
+# -- Container image configuration
+image:
+  # -- Image repository (REQUIRED when job.enabled)
+  repository: ""
+  # -- Image tag (REQUIRED when job.enabled unless digest is set) — no default to prevent floating tags
+  tag: ""
+  # -- Image digest — takes precedence over tag when set (e.g. sha256:abc123...)
+  digest: ""
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+
+# -- Image pull secrets for private registries
+imagePullSecrets: []
+
+# -- Command to execute in the container (overrides ENTRYPOINT)
+command: []
+# -- Arguments to the command (overrides CMD)
+args: []
+
+# -- Environment variables for the container
+env: []
+# -- Bulk environment variable sources (Secret/ConfigMap references)
+envFrom: []
+
+# -- Container resource requests and limits
+resources: {}
+
+# -- Pod-level security context
+podSecurityContext: {}
+# -- Container-level security context
+securityContext: {}
+
+# -- Volume mounts for the container
+volumeMounts: []
+# -- Volumes to attach to the pod
+volumes: []
+
+# -- Node selector constraints
+nodeSelector: {}
+# -- Tolerations for node taints
+tolerations: []
+# -- Affinity rules for pod scheduling
+affinity: {}
+
+# -- Pod restart policy (should be Never or OnFailure for Jobs)
+restartPolicy: Never
+
+# -- Service account name for the pod (typically set to parent chart's SA)
+serviceAccountName: ""
+
+# -- Additional annotations to add to the pod
+podAnnotations: {}
+# -- Additional labels to add to the pod
+podLabels: {}
+
+# -- Override the chart name used in resource names
+nameOverride: ""
+# -- Override the full resource name
+fullnameOverride: ""
