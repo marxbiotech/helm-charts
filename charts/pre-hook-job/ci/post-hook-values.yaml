@@ -1,0 +1,13 @@
+# Post-install/upgrade hook: the Job runs after the release's resources exist.
+job:
+  enabled: true
+  hash: "ci-post-hook"
+  hook: "post-install,post-upgrade"
+  hookWeight: "1"
+
+image:
+  repository: busybox
+  tag: "1.37"
+
+command: ["echo"]
+args: ["pre-hook-job post-hook CI test"]

@@ -7,6 +7,11 @@ job:
   enabled: false
   # -- Unique hash for this Job's content — ensures a new Job is created on each change (REQUIRED when enabled)
   hash: ""
+  # -- Helm hook phase(s) the Job runs in. Default keeps the chart's original
+  # pre-install/pre-upgrade behaviour (migrations must finish before the app
+  # rolls out). Use "post-install,post-upgrade" for work that needs the release's
+  # own services running first, e.g. reconciling an API's state from config.
+  hook: "pre-install,pre-upgrade"
   # -- Helm hook weight — controls execution order among multiple hooks (lower runs first)
   hookWeight: "-1"
   # -- Helm hook delete policy — "before-hook-creation" preserves both failed and succeeded Jobs after a release; old hook resources are cleaned up before the next hook runs (note: ttlSecondsAfterFinished may delete finished Jobs earlier)

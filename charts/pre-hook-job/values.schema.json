@@ -13,6 +13,17 @@
         "hash": {
           "type": "string"
         },
+        "hook": {
+          "type": "string",
+          "enum": [
+            "pre-install,pre-upgrade",
+            "post-install,post-upgrade",
+            "pre-install",
+            "pre-upgrade",
+            "post-install",
+            "post-upgrade"
+          ]
+        },
         "hookWeight": {
           "type": "string"
         },

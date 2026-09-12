@@ -3,6 +3,10 @@
 {{- if not (or .Values.image.digest .Values.image.tag) }}
 {{- fail "either image.tag or image.digest is required — specify an explicit image reference (no floating tags)" }}
 {{- end }}
+{{- $validHooks := list "pre-install,pre-upgrade" "post-install,post-upgrade" "pre-install" "pre-upgrade" "post-install" "post-upgrade" }}
+{{- if not (has .Values.job.hook $validHooks) }}
+{{- fail (printf "job.hook must be one of %s, got: %s" ($validHooks | join " | ") .Values.job.hook) }}
+{{- end }}
 {{- $validPolicies := list "hook-succeeded" "hook-failed" "before-hook-creation" }}
 {{- if not (has .Values.job.hookDeletePolicy $validPolicies) }}
 {{- fail (printf "job.hookDeletePolicy must be one of %s, got: %s" ($validPolicies | join ", ") .Values.job.hookDeletePolicy) }}
@@ -17,7 +21,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
     {{- end }}
   annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook": {{ .Values.job.hook | quote }}
     "helm.sh/hook-weight": {{ .Values.job.hookWeight | quote }}
     "helm.sh/hook-delete-policy": {{ .Values.job.hookDeletePolicy | quote }}
     {{- with .Values.job.annotations }}

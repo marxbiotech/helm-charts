@@ -41,7 +41,8 @@ helm.sh/chart: {{ include "pre-hook-job.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kubernetes.io/component: pre-hook
+{{- /* "pre-hook" is kept for pre phases so existing selectors keep matching. */}}
+app.kubernetes.io/component: {{ if hasPrefix "post-" .Values.job.hook }}post-hook{{ else }}pre-hook{{ end }}
 {{- end }}
 
 {{/*

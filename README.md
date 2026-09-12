@@ -7,7 +7,7 @@ Production-ready Helm charts published as OCI artifacts to [GitHub Container Reg
 | Chart | Description |
 |-------|-------------|
 | [sample-app](./charts/sample-app) | A sample Helm chart for Kubernetes |
-| [pre-hook-job](./charts/pre-hook-job) | A generic chart for pre-install/pre-upgrade hook Jobs (DB migrations, seeding) |
+| [pre-hook-job](./charts/pre-hook-job) | A generic chart for Helm hook Jobs — pre-install/pre-upgrade by default (DB migrations, seeding), or post-install/post-upgrade via `job.hook` (reconcile a deployed service from config) |
 | [simple](./charts/simple) | A generic Deployment/Service chart imported from Shopline's simple chart |
 | [k8s-ssh](./charts/k8s-ssh) | An SSH bastion Deployment for `kubectl port-forward` access into a cluster |
 | [standalone-job](./charts/standalone-job) | A generic chart for manual and operator-triggered one-off Jobs |
