@@ -6,6 +6,10 @@
     "enableServiceLinks": {
       "description": "Set false to stop Kubernetes injecting {SVCNAME}_SERVICE_HOST/_PORT env vars for in-namespace Services into Pods. Unset defaults to the Kubernetes default (true).",
       "type": "boolean"
+    },
+    "automountServiceAccountToken": {
+      "description": "Pod-level automountServiceAccountToken. Set false for workloads that never call the Kubernetes API. Unset defaults to the Kubernetes default (the ServiceAccount's setting, normally true). IRSA is unaffected.",
+      "type": "boolean"
     }
   }
 }

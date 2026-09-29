@@ -42,6 +42,9 @@ spec:
       {{- if hasKey .Values "enableServiceLinks" }}
       enableServiceLinks: {{ .Values.enableServiceLinks }}
       {{- end }}
+      {{- if hasKey .Values "automountServiceAccountToken" }}
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      {{- end }}
       {{- if hasKey .Values "tolerations" }}
       tolerations:
         {{- toYaml .Values.tolerations | nindent 8 }}

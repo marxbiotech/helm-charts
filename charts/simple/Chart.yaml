@@ -2,7 +2,7 @@ apiVersion: v1
 appVersion: 0.0.1
 description: Helm chart with simple deployment/service template
 name: simple
-version: 0.19.0
+version: 0.20.0
 maintainers:
   - name: xin
     email: aehrt55@aehrt55.net

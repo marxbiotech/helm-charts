@@ -33,3 +33,20 @@ follow-up lands, add a `templates/tests/test-connection.yaml` mirroring
 `charts/sample-app/templates/tests/test-connection.yaml`, adapted to this
 chart's conventions (Service name is `.Values.name`; no `simple.fullname` helper
 exists, and the connecting fixture must define `service:` + a port).
+
+### First-party pod-level keys added on top of upstream
+
+Upstream `simple` has no pod-level `automountServiceAccountToken`. Version
+`0.20.0` adds it next to `enableServiceLinks`, with the same shape: a top-level
+boolean, rendered only when the key is present (`hasKey` guard), validated by
+the additive `values.schema.json`. Absent keeps the Kubernetes default, so every
+existing consumer renders byte-identical manifests.
+
+Motivation: lander-marxbio-tech-env's `api-query` never calls the Kubernetes
+API and used to render `automountServiceAccountToken: false` from a hand-written
+template; moving it onto this chart must not lose that. IRSA workloads are not
+affected by the flag, because the EKS pod identity webhook injects its own
+projected token volume rather than relying on the default ServiceAccount mount.
+
+CI: `ci/automount-false-values.yaml` installs the chart with the key set to
+`false`, so the branch is exercised on Kind, not only by local `helm template`.
