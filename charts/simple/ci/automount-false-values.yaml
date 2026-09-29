@@ -1,0 +1,10 @@
+# Exercises the automountServiceAccountToken=false branch of deployment.yaml on Kind.
+name: simple-test-automount
+businessid: "test-business"
+
+automountServiceAccountToken: false
+
+container:
+  image:
+    repository: nginx
+    tag: "1.25"

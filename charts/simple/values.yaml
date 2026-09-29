@@ -25,6 +25,11 @@ replicaCount: 1
 # Set to false to prevent Kubernetes from injecting Service environment variables into Pods.
 # enableServiceLinks: false
 
+# Set to false to stop mounting the ServiceAccount token into the Pod. Workloads that
+# never call the Kubernetes API (plain HTTP services) should set this. IRSA is unaffected:
+# the EKS pod identity webhook injects its own projected token volume.
+# automountServiceAccountToken: false
+
 # topologySpreadConstraints:
 #   - labelSelector:
 #       matchLabels:
