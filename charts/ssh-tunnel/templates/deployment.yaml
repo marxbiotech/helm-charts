@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ssh-tunnel.fullname" . }}
+  labels:
+    {{- include "ssh-tunnel.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "ssh-tunnel.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- with (omit .Values.podAnnotations "checksum/config") }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      labels:
+        {{- with (omit .Values.podLabels "app.kubernetes.io/name" "app.kubernetes.io/instance") }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- include "ssh-tunnel.selectorLabels" . | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: ssh-tunnel
+          image: "{{ .Values.image.repository }}@{{ .Values.image.digest }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/bash", "/chart-config/start.sh"]
+          env:
+            - name: USER_NAME
+              value: {{ .Values.user | quote }}
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: PASSWORD_ACCESS
+              value: "false"
+            - name: SUDO_ACCESS
+              value: "false"
+            - name: LOG_STDOUT
+              value: "true"
+            - name: PUBLIC_KEY_FILE
+              value: /chart-config/authorized_keys
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+              add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID, KILL]
+          ports:
+            - name: ssh
+              containerPort: 2222
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: ssh
+          livenessProbe:
+            tcpSocket:
+              port: ssh
+            initialDelaySeconds: 15
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: chart-config
+              mountPath: /chart-config
+              readOnly: true
+            {{- if .Values.hostKeys.existingSecret }}
+            - name: host-keys
+              mountPath: /host-keys
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: config
+          emptyDir: {}
+        - name: chart-config
+          configMap:
+            name: {{ include "ssh-tunnel.fullname" . }}
+        {{- if .Values.hostKeys.existingSecret }}
+        - name: host-keys
+          secret:
+            secretName: {{ .Values.hostKeys.existingSecret | quote }}
+            defaultMode: 0400
+            items:
+              - key: ssh_host_ed25519_key
+                path: ssh_host_ed25519_key
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

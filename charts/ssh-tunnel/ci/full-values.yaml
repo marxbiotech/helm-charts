@@ -1,0 +1,33 @@
+permitOpen:
+  - target:8080
+authorizedKeys:
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPF9lhWWGY2ha529fMyP6ROjkUErkzJ8qFqO4ZdW8Feh ssh-tunnel-ci-public-only
+user: forwarding
+nameOverride: tunnel-endpoint
+fullnameOverride: tunnel-custom
+service:
+  port: 2200
+networkPolicy:
+  enabled: true
+  egressCIDRs:
+    - 192.0.2.0/24
+podAnnotations:
+  example.com/owner: ci
+podLabels:
+  example.com/role: tunnel
+nodeSelector:
+  kubernetes.io/os: linux
+tolerations:
+  - key: dedicated
+    operator: Equal
+    value: tunnel
+    effect: NoSchedule
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: tunnel-endpoint
+          topologyKey: kubernetes.io/hostname

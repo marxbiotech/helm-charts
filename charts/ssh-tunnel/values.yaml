@@ -1,0 +1,43 @@
+replicaCount: 1
+
+image:
+  repository: lscr.io/linuxserver/openssh-server
+  # Multi-platform index (linux/amd64 and linux/arm64). The tag is informational only.
+  digest: sha256:0b46c755aac07057908077f2c7ff14f0ad923970bb6a3a67bcd008e72fa60050
+  tag: "10.3_p1-r1-ls241"
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+user: tunnel
+# Required: one OpenSSH public key per entry; never put private keys here.
+authorizedKeys: []
+# Required: exact destination host:port strings, e.g. db.example.internal:5432.
+# No wildcards. Use [IPv6-address]:port for IPv6 destinations.
+permitOpen: []
+hostKeys:
+  # Secret must contain ssh_host_ed25519_key; its .pub file is optional.
+  # Provision out of band. Changes to this Secret require a rollout restart.
+  existingSecret: ""
+
+service:
+  port: 2222
+
+networkPolicy:
+  enabled: false
+  # Each entry is a destination CIDR. All TCP ports within these CIDRs are allowed;
+  # sshd independently enforces permitOpen. DNS uses TCP/UDP 53 to cluster pods.
+  egressCIDRs: []
+
+podAnnotations: {}
+podLabels: {}
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
+nodeSelector: {}
+tolerations: []
+affinity: {}

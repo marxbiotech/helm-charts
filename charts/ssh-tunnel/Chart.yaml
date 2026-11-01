@@ -1,0 +1,13 @@
+apiVersion: v2
+name: ssh-tunnel
+description: A port-forwarding-only SSH endpoint with an explicit destination allowlist
+type: application
+version: 0.1.0
+appVersion: "10.3_p1-r1-ls241"
+maintainers:
+  - name: xin
+    email: aehrt55@aehrt55.net
+home: https://github.com/marxbiotech/helm-charts
+sources:
+  - https://github.com/marxbiotech/helm-charts
+  - https://github.com/linuxserver/docker-openssh-server
