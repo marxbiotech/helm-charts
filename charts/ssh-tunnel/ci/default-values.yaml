@@ -1,0 +1,4 @@
+permitOpen:
+  - target:8080
+authorizedKeys:
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPF9lhWWGY2ha529fMyP6ROjkUErkzJ8qFqO4ZdW8Feh ssh-tunnel-ci-public-only

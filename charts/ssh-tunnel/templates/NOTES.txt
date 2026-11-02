@@ -1,0 +1,22 @@
+SSH tunnel endpoint (public-key authentication, forwarding only).
+
+1. Forward the Service to localhost:
+   kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "ssh-tunnel.fullname" . }} 2222:{{ .Values.service.port }}
+
+2. In another terminal, open a local tunnel (keep both commands running):
+   ssh -i ~/.ssh/id_ed25519 -p 2222 -N -L 15432:{{ first .Values.permitOpen }} {{ .Values.user }}@localhost
+
+3. Connect your database client to 127.0.0.1:15432.
+   For TablePlus/DBeaver's built-in SSH tunnel: SSH host localhost, port 2222,
+   user {{ .Values.user }}, private-key authentication; DB host/port = an allowed destination.
+
+The destination host string in -L / your GUI must EXACTLY match permitOpen.
+OpenSSH compares strings; DNS aliases, IP addresses, and localhost are not interchangeable.
+Shell, command execution, SFTP, TTY, agent forwarding, and -R are unavailable.
+Verify the SSH host fingerprint using a trusted channel before accepting it.
+{{- if not .Values.hostKeys.existingSecret }}
+
+WARNING: hostKeys.existingSecret is unset. Host keys are generated in emptyDir;
+a new Pod gets new keys and SSH/GUI clients will report a changed host identity.
+Provision a Secret containing ssh_host_ed25519_key for a stable host identity.
+{{- end }}

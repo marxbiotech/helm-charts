@@ -1,0 +1,58 @@
+{{- if not .Values.authorizedKeys }}
+{{- fail "ssh-tunnel: authorizedKeys is required; provide at least one OpenSSH public key" }}
+{{- end }}
+{{- if not .Values.permitOpen }}
+{{- fail "ssh-tunnel: permitOpen is required; provide at least one exact host:port destination" }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ssh-tunnel.fullname" . }}
+  labels:
+    {{- include "ssh-tunnel.labels" . | nindent 4 }}
+data:
+  authorized_keys: |
+    {{- range .Values.authorizedKeys }}
+    {{ . }}
+    {{- end }}
+  sshd_config: |
+    Port 2222
+    PidFile /config/sshd.pid
+    AuthorizedKeysFile /config/.ssh/authorized_keys
+    PasswordAuthentication no
+    KbdInteractiveAuthentication no
+    PermitRootLogin no
+    PubkeyAuthentication yes
+    AuthenticationMethods publickey
+    UsePAM no
+    AllowTcpForwarding local
+    AllowStreamLocalForwarding no
+    PermitOpen {{ join " " .Values.permitOpen }}
+    PermitListen none
+    GatewayPorts no
+    X11Forwarding no
+    AllowAgentForwarding no
+    PermitTunnel no
+    PermitTTY no
+    PermitUserRC no
+    PermitUserEnvironment no
+    ForceCommand echo "port forwarding only"
+    AllowUsers {{ .Values.user }}
+    ClientAliveInterval 60
+    ClientAliveCountMax 3
+    LogLevel VERBOSE
+    UseDNS no
+  start.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    # Copy before /init: upstream uses sed/chown on the writable configuration.
+    # There are no Includes; upstream's password/port edits preserve our policy.
+    mkdir -p /config/sshd
+    cp /chart-config/sshd_config /config/sshd/sshd_config
+    if [[ -d /host-keys ]]; then
+      mkdir -p /config/ssh_host_keys
+      cp /host-keys/ssh_host_ed25519_key /config/ssh_host_keys/
+      chmod 600 /config/ssh_host_keys/ssh_host_ed25519_key
+      ssh-keygen -y -f /config/ssh_host_keys/ssh_host_ed25519_key > /config/ssh_host_keys/ssh_host_ed25519_key.pub
+    fi
+    exec /init
