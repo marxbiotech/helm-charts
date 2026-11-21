@@ -54,10 +54,17 @@ CI: `ci/automount-false-values.yaml` installs the chart with the key set to
 ### Optional Kubernetes IngressClass
 
 Version `0.21.0` adds `ingressClassName` to the single Ingress values and to
-each named Ingress in multiple mode. This lets applications select a
-pre-provisioned IngressClass through `spec.ingressClassName`. The templates
-keep the existing annotations and rules. An omitted class leaves the rendered
-Ingress unchanged. The added values schema checks only the new field.
+each named Ingress in multiple mode. AWS Load Balancer Controller can use
+this field to select a shared ALB's IngressClass and settings. The templates
+keep the existing annotations and rules. An omitted or empty class leaves
+the rendered Ingress unchanged. The existing schema validates the new
+field as a string in each mode.
 
-The two ingress class CI fixtures install each shape in Kind. Hosts, backend
-Services, and controller-specific annotations remain ordinary chart values.
+Remove the legacy `kubernetes.io/ingress.class` annotation when setting
+`ingressClassName`. The Kubernetes API rejects new Ingresses when both values
+are present and differ.
+
+`ci/ingress-class-single-values.yaml` and
+`ci/ingress-class-multiple-values.yaml` exercise API acceptance in Kind.
+Hosts, backend Services, and controller-specific annotations remain ordinary
+chart values.
