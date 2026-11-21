@@ -1,0 +1,14 @@
+enabled: false
+
+ingress:
+  name: ""
+  className: ""
+  hostname: ""
+  paths: []
+
+# Optional ClusterIP Services. Routes can also reference existing Services.
+services: {}
+
+# The chart-testing fixture enables a DNS check for the generated Services.
+test:
+  enabled: false

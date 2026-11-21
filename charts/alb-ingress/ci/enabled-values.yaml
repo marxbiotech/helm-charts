@@ -1,0 +1,19 @@
+enabled: true
+ingress:
+  name: example-alb
+  className: example-alb
+  hostname: app.example.com
+  paths:
+    - path: /
+      pathType: Prefix
+      serviceName: web
+      servicePort: 8080
+services:
+  web:
+    selector:
+      app: example
+    port: 8080
+    targetPort: http
+    healthCheckPath: /health
+test:
+  enabled: true

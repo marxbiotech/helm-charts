@@ -14,6 +14,7 @@ Production-ready Helm charts published as OCI artifacts to [GitHub Container Reg
 | [k8s-ssh](./charts/k8s-ssh) | An SSH bastion Deployment for `kubectl port-forward` access into a cluster |
 | [standalone-job](./charts/standalone-job) | A generic chart for manual and operator-triggered one-off Jobs |
 | [cronjob](./charts/cronjob) | A generic chart for scheduled CronJobs (schedule, `timeZone`, suspend, history limits) |
+| [alb-ingress](./charts/alb-ingress) | HTTPS routes and optional target Services for an AWS Load Balancer Controller IngressClass |
 
 ## Install a Chart
 

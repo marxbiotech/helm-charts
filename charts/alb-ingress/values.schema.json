@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "enabled": { "type": "boolean" },
+    "ingress": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "className": { "type": "string" },
+        "hostname": { "type": "string" },
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "pathType", "serviceName", "servicePort"],
+            "properties": {
+              "path": { "type": "string", "pattern": "^/" },
+              "pathType": { "enum": ["Prefix", "Exact"] },
+              "serviceName": { "type": "string", "minLength": 1 },
+              "servicePort": { "$ref": "#/definitions/port" }
+            }
+          }
+        }
+      }
+    },
+    "services": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["selector", "port", "targetPort"],
+        "properties": {
+          "selector": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": { "type": "string" }
+          },
+          "port": { "$ref": "#/definitions/port" },
+          "targetPort": {
+            "anyOf": [
+              { "$ref": "#/definitions/port" },
+              { "type": "string", "minLength": 1 }
+            ]
+          },
+          "healthCheckPath": { "type": "string", "pattern": "^/" }
+        }
+      }
+    },
+    "test": {
+      "type": "object",
+      "properties": { "enabled": { "type": "boolean" } }
+    }
+  },
+  "definitions": {
+    "port": { "type": "integer", "minimum": 1, "maximum": 65535 }
+  },
+  "if": {
+    "required": ["enabled"],
+    "properties": { "enabled": { "const": true } }
+  },
+  "then": {
+    "required": ["ingress"],
+    "properties": {
+      "ingress": {
+        "required": ["name", "className", "hostname", "paths"],
+        "properties": {
+          "name": { "minLength": 1 },
+          "className": { "minLength": 1 },
+          "hostname": { "minLength": 1 },
+          "paths": { "minItems": 1 }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{{- if .Values.enabled }}
+{{- range $name, $service := .Values.services }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name | quote }}
+  {{- with $service.healthCheckPath }}
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: {{ . | quote }}
+  {{- end }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- toYaml $service.selector | nindent 4 }}
+  ports:
+    - port: {{ $service.port }}
+      targetPort: {{ $service.targetPort | toJson }}
+      protocol: TCP
+{{- end }}
+{{- end }}

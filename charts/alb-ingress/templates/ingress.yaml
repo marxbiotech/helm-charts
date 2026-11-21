@@ -1,0 +1,23 @@
+{{- if .Values.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ required "ingress.name is required" .Values.ingress.name | quote }}
+  annotations:
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+spec:
+  ingressClassName: {{ required "ingress.className is required" .Values.ingress.className | quote }}
+  rules:
+    - host: {{ required "ingress.hostname is required" .Values.ingress.hostname | quote }}
+      http:
+        paths:
+          {{- range required "ingress.paths must contain at least one route" .Values.ingress.paths }}
+          - path: {{ .path | quote }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ .serviceName | quote }}
+                port:
+                  number: {{ .servicePort }}
+          {{- end }}
+{{- end }}

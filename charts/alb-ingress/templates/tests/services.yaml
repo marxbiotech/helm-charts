@@ -1,0 +1,28 @@
+{{- if and .Values.enabled .Values.test.enabled .Values.services }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ printf "%s-dns-test" .Release.Name | trunc 63 | trimSuffix "-" | quote }}
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  automountServiceAccountToken: false
+  restartPolicy: Never
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    {{- range $name, $_ := .Values.services }}
+    - name: {{ $name | quote }}
+      image: busybox:1.37
+      command: ["nslookup", {{ $name | quote }}]
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        runAsUser: 1000
+        capabilities:
+          drop: ["ALL"]
+    {{- end }}
+{{- end }}

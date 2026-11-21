@@ -1,0 +1,11 @@
+apiVersion: v2
+name: alb-ingress
+description: HTTPS routes and optional target Services for an AWS Load Balancer Controller IngressClass
+type: application
+version: 0.1.0
+maintainers:
+  - name: xin
+    email: aehrt55@aehrt55.net
+home: https://github.com/marxbiotech/helm-charts
+sources:
+  - https://github.com/marxbiotech/helm-charts
