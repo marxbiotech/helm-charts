@@ -1,0 +1,25 @@
+name: simple-test-single-ingress
+businessid: test-business
+
+container:
+  image:
+    repository: nginx
+    tag: "1.25"
+
+service:
+  ports:
+    - port: 80
+      targetPort: 80
+
+ingress:
+  ingressClassName: example-class
+  annotations: {}
+  rules:
+    - host: single.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              serviceName: simple-test-single-ingress
+              servicePort: 80

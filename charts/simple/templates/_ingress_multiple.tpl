@@ -16,6 +16,9 @@ metadata:
   annotations:
 {{ toYaml $ref.annotations | indent 4 }}
 spec:
+  {{- with $ref.ingressClassName }}
+  ingressClassName: {{ . | quote }}
+  {{- end }}
   {{- if $ref.tls }}
   tls:
     - hosts:

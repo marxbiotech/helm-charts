@@ -98,11 +98,14 @@ global:
   imagePullPolicy: IfNotPresent
 
 EnableMutilpleIngress: false
+# Set ingress.ingressClassName in single mode or ingress.<name>.ingressClassName
+# in multiple mode to select a Kubernetes IngressClass. Omit it or use ""
+# for legacy annotation-based routing. When setting a class, remove the
+# kubernetes.io/ingress.class annotation from that Ingress.
 # EnableMutilpleIngress: true
 # ingress:
 #   internal-ingress:
-#     annotations:
-#       kubernetes.io/ingress.class: alb
+#     ingressClassName: internal-apps
 #     rules:
 #       - host:
 #         http:

@@ -50,3 +50,21 @@ projected token volume rather than relying on the default ServiceAccount mount.
 
 CI: `ci/automount-false-values.yaml` installs the chart with the key set to
 `false`, so the branch is exercised on Kind, not only by local `helm template`.
+
+### Optional Kubernetes IngressClass
+
+Version `0.21.0` adds `ingressClassName` to the single Ingress values and to
+each named Ingress in multiple mode. AWS Load Balancer Controller can use
+this field to select a shared ALB's IngressClass and settings. The templates
+keep the existing annotations and rules. An omitted or empty class leaves
+the rendered Ingress unchanged. The existing schema validates the new
+field as a string in each mode.
+
+Remove the legacy `kubernetes.io/ingress.class` annotation when setting
+`ingressClassName`. The Kubernetes API rejects new Ingresses when both values
+are present and differ.
+
+`ci/ingress-class-single-values.yaml` and
+`ci/ingress-class-multiple-values.yaml` exercise API acceptance in Kind.
+Hosts, backend Services, and controller-specific annotations remain ordinary
+chart values.

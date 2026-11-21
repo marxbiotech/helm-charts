@@ -12,6 +12,9 @@ metadata:
   annotations:
 {{ toYaml .Values.ingress.annotations | indent 4 }}
 spec:
+  {{- with .Values.ingress.ingressClassName }}
+  ingressClassName: {{ . | quote }}
+  {{- end }}
   {{- if .Values.ingress.tls }}
   tls:
     - hosts:

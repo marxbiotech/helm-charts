@@ -11,5 +11,29 @@
       "description": "Pod-level automountServiceAccountToken. Set false for workloads that never call the Kubernetes API. Unset defaults to the Kubernetes default (the ServiceAccount's setting, normally true). IRSA is unaffected.",
       "type": "boolean"
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["EnableMutilpleIngress"],
+        "properties": { "EnableMutilpleIngress": { "const": true } }
+      },
+      "then": {
+        "properties": {
+          "ingress": {
+            "additionalProperties": {
+              "properties": { "ingressClassName": { "type": "string" } }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "ingress": {
+            "properties": { "ingressClassName": { "type": "string" } }
+          }
+        }
+      }
+    }
+  ]
 }
