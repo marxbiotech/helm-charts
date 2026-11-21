@@ -1,0 +1,39 @@
+name: simple-test-multiple-ingress
+businessid: test-business
+
+container:
+  image:
+    repository: nginx
+    tag: "1.25"
+
+service:
+  ports:
+    - port: 80
+      targetPort: 80
+
+EnableMutilpleIngress: true
+ingress:
+  simple-classed:
+    ingressClassName: example-class
+    annotations: {}
+    rules:
+      - host: multiple.example.com
+        http:
+          paths:
+            - path: /
+              pathType: Prefix
+              backend:
+                serviceName: simple-test-multiple-ingress
+                servicePort: 80
+  simple-legacy:
+    annotations:
+      kubernetes.io/ingress.class: example-legacy
+    rules:
+      - host: legacy.example.com
+        http:
+          paths:
+            - path: /
+              pathType: Prefix
+              backend:
+                serviceName: simple-test-multiple-ingress
+                servicePort: 80

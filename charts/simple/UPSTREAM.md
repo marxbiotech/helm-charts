@@ -50,3 +50,14 @@ projected token volume rather than relying on the default ServiceAccount mount.
 
 CI: `ci/automount-false-values.yaml` installs the chart with the key set to
 `false`, so the branch is exercised on Kind, not only by local `helm template`.
+
+### Optional Kubernetes IngressClass
+
+Version `0.21.0` adds `ingressClassName` to the single Ingress values and to
+each named Ingress in multiple mode. This lets applications select a
+pre-provisioned IngressClass through `spec.ingressClassName`. The templates
+keep the existing annotations and rules. An omitted class leaves the rendered
+Ingress unchanged. The added values schema checks only the new field.
+
+The two ingress class CI fixtures install each shape in Kind. Hosts, backend
+Services, and controller-specific annotations remain ordinary chart values.
