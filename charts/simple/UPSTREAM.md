@@ -119,7 +119,10 @@ Upstream `compute_checksum::<path>` only works when the path points at a
 string; a map fails to render (`sha256sum` expects a string). Version `0.23.0`
 hashes non-string values as JSON (`toJson` sorts map keys, so the result is
 stable). String values keep the original hash, so existing annotations render
-the same value.
+the same value. A path segment that does not exist fails the render
+(`compute_checksum: <path>: missing key "<segment>"`) instead of hashing
+`null`, so a typo cannot produce a checksum that never changes. An explicit
+`null` value is still hashed.
 
 Typical use: `deployment.annotations` with
 `checksum/configmaps: compute_checksum::configmaps`, so any change to the
