@@ -1,0 +1,16 @@
+businessid: test-business
+deploymentEnabled: false
+EnableMutilpleIngress: true
+ingress:
+  simple-ingress-only:
+    ingressClassName: example-class
+    annotations: {}
+    rules:
+      - host: routes.example.com
+        http:
+          paths:
+            - path: /
+              pathType: Prefix
+              backend:
+                serviceName: existing-backend
+                servicePort: 80

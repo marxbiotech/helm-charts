@@ -68,3 +68,12 @@ are present and differ.
 `ci/ingress-class-multiple-values.yaml` exercise API acceptance in Kind.
 Hosts, backend Services, and controller-specific annotations remain ordinary
 chart values.
+
+### Route existing workloads
+
+Version `0.22.0` adds `deploymentEnabled`. It defaults to `true`; set it to
+`false` to use the chart for Ingresses that reference Services managed
+elsewhere. Explicitly configured resources such as a Service or Rollout
+still render. The boolean is validated by the additive values schema.
+`ci/ingress-only-values.yaml` exercises installing the chart with an
+Ingress and no Deployment in Kind.

@@ -1,3 +1,4 @@
+{{- if ne .Values.deploymentEnabled false }}
 {{ include "resource_tag_checker" . }}
 apiVersion: apps/v1
 kind: Deployment
@@ -148,3 +149,4 @@ spec:
             value: "2"
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.deployment.terminationGracePeriodSeconds | default "75" }}
+{{- end }}

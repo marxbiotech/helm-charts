@@ -2,6 +2,9 @@ name: app-name
 
 replicaCount: 1
 
+# Set to false when the backend workloads are managed outside this chart.
+deploymentEnabled: true
+
 # Required: please quote the businessid as string
 # businessid: "xxxxxxxxxxxxxxxxxx"
 
