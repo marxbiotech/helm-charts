@@ -62,6 +62,7 @@ deployment: {}
 #   annotations:
 #     checksum/config: checksum
 #     checksum/config.yml: compute_checksum::configmaps/app-config/data/config.yml # `compute_checksum` will compute the sha256 checksum of the content
+#     checksum/configmaps: compute_checksum::configmaps # a map is hashed as JSON: any ConfigMap change rolls the pods
 #   containers:
 #     example-app:
 #       name: example-app
