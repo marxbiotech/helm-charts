@@ -73,7 +73,19 @@ chart values.
 
 Version `0.22.0` adds `deploymentEnabled`. It defaults to `true`; set it to
 `false` to use the chart for Ingresses that reference Services managed
-elsewhere. Explicitly configured resources such as a Service or Rollout
-still render. The boolean is validated by the additive values schema.
-`ci/ingress-only-values.yaml` exercises installing the chart with an
-Ingress and no Deployment in Kind.
+elsewhere. The boolean is validated by the additive values schema.
+
+On upgrade, changing to `false` removes the Deployment previously managed
+by that release. Deploy the external backends and verify the Service
+endpoints before making that change.
+
+Explicitly configured resources still render. A Rollout with a
+`workloadRef` needs an existing Deployment named by `name` in the release
+namespace. HPA and KEDA likewise need their scale target, either the Rollout
+or that Deployment. A chart-managed Service or PodDisruptionBudget must
+select the intended external pods. Check their rendered selectors before
+enabling either one.
+
+`ci/ingress-only-values.yaml` installs an Ingress and no Deployment in Kind.
+The existing workload fixtures omit the key and exercise the enabled
+behavior in the same check.

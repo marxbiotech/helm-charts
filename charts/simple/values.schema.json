@@ -4,7 +4,7 @@
   "additionalProperties": true,
   "properties": {
     "deploymentEnabled": {
-      "description": "Render the default Deployment. Set false when the backend workloads are managed separately.",
+      "description": "Render the chart's Deployment. Omit to keep it enabled. Set false when the backend workloads are managed separately.",
       "type": "boolean"
     },
     "enableServiceLinks": {

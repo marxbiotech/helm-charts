@@ -2,8 +2,10 @@ name: app-name
 
 replicaCount: 1
 
-# Set to false when the backend workloads are managed outside this chart.
-deploymentEnabled: true
+# The Deployment is enabled by default. Set false to route to workloads
+# managed outside this chart. See UPSTREAM.md before changing a live release
+# or using this with a Rollout or autoscaler.
+# deploymentEnabled: false
 
 # Required: please quote the businessid as string
 # businessid: "xxxxxxxxxxxxxxxxxx"

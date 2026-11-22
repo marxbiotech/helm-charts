@@ -1,3 +1,4 @@
+{{- /* A missing key, including upgrades that reuse older release values, must keep rendering the Deployment. */}}
 {{- if ne .Values.deploymentEnabled false }}
 {{ include "resource_tag_checker" . }}
 apiVersion: apps/v1
