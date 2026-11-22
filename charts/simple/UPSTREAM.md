@@ -89,3 +89,48 @@ enabling either one.
 `ci/ingress-only-values.yaml` installs an Ingress and no Deployment in Kind.
 The existing workload fixtures omit the key and exercise the enabled
 behavior in the same check.
+
+### Upstream 0.19.0–0.20.1 additions
+
+Version `0.23.0` ports the additive changes upstream made after the imported
+`0.18.0` package, so deployments still on the published Shopline `0.20.1`
+package can move to this chart without losing behavior:
+
+- The Deployment's pod template carries the `businessid` label (the
+  Deployment metadata already had it).
+- `envFromFieldRefs` on each container in `deployment.containers` renders
+  `valueFrom.fieldRef` env vars (for example `status.hostIP`).
+- `KEDA.ScaledObject.annotations` renders annotations on the ScaledObject.
+
+The pod-template label changes the pod template, so existing consumers roll
+their pods once when they upgrade to `0.23.0`. It is not part of the selector,
+so the upgrade does not hit the immutable-selector error.
+
+Two upstream changes are not ported because they would change manifests for
+existing consumers of this chart: the Service/Ingress label rendering rewrite,
+and the default
+`alb.ingress.kubernetes.io/ssl-policy` that upstream adds when
+`load-balancer-name` is set without an ssl-policy. Set the ssl-policy
+annotation explicitly if you need it.
+
+### `compute_checksum` for maps
+
+Upstream `compute_checksum::<path>` only works when the path points at a
+string; a map fails to render (`sha256sum` expects a string). Version `0.23.0`
+hashes non-string values as JSON (`toJson` sorts map keys, so the result is
+stable). String values keep the original hash, so existing annotations render
+the same value. A path segment that does not exist fails the render
+(`compute_checksum: <path>: missing key "<segment>"`) instead of hashing
+`null`, so a typo cannot produce a checksum that never changes. An explicit
+`null` value is still hashed.
+
+Typical use: `deployment.annotations` with
+`checksum/configmaps: compute_checksum::configmaps`, so any change to the
+chart's ConfigMaps changes the pod template and rolls the pods. Do not point it
+at `secrets`: the annotation is readable by anyone who can read the
+Deployment, and an unsalted hash of secret values can be guessed offline when a
+secret is short.
+
+`ci/checksum-map-values.yaml` exercises the map branch and
+`envFromFieldRefs` on Kind.
+

@@ -39,6 +39,7 @@ spec:
         {{- end }}
       {{- end}}
       labels:
+        businessid: {{ $.Values.businessid | quote}}
         app: {{ .Values.name }}
     spec:
       {{- if hasKey .Values "enableServiceLinks" }}

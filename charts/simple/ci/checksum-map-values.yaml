@@ -1,0 +1,25 @@
+# Exercises compute_checksum on a map (checksum/configmaps) and envFromFieldRefs on Kind.
+name: simple-test-checksum
+businessid: "test-business"
+
+deployment:
+  annotations:
+    checksum/configmaps: compute_checksum::configmaps
+    checksum/single: compute_checksum::configmaps/app-env/data/GREETING
+  containers:
+    app:
+      name: app
+      image:
+        repository: nginx
+        tag: "1.25"
+      envFromConfigmap:
+        - name: app-env
+      envFromFieldRefs:
+        - name: HOST_IP
+          fieldPath: status.hostIP
+
+configmaps:
+  app-env:
+    data:
+      GREETING: hello
+      COUNT: "1"
