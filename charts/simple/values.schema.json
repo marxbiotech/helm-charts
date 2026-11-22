@@ -3,6 +3,10 @@
   "type": "object",
   "additionalProperties": true,
   "properties": {
+    "deploymentEnabled": {
+      "description": "Render the chart's Deployment. Omit to keep it enabled. Set false when the backend workloads are managed separately.",
+      "type": "boolean"
+    },
     "enableServiceLinks": {
       "description": "Set false to stop Kubernetes injecting {SVCNAME}_SERVICE_HOST/_PORT env vars for in-namespace Services into Pods. Unset defaults to the Kubernetes default (true).",
       "type": "boolean"
